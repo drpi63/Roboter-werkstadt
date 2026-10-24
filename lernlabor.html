@@ -1,0 +1,329 @@
+<!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Roboter-Lernlabor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: Spielfeld links, Messwerte und Regler rechts; auf dem Handy untereinander. */
+:root{
+  --bg:#eceff2; --surface:#ffffff; --surface-2:#e3e8ed; --ink:#1b2430; --ink-2:#566474; --line:#cfd6de;
+  --accent:#d9480f; --on-accent:#ffffff; --goal:#2b8a3e; --goal-bg:#d3f0da; --path:#1971c2; --wall:#7a8794; --grid:rgba(27,36,48,.06);
+  --f-display:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161b; --surface:#1b2128; --surface-2:#252d36; --ink:#e8edf2; --ink-2:#9aa8b6; --line:#333d48;
+    --accent:#ff8a4c; --on-accent:#1a1006; --goal:#69db7c; --goal-bg:#1f4a2c; --path:#74c0fc; --wall:#5d6a77; --grid:rgba(232,237,242,.05);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161b; --surface:#1b2128; --surface-2:#252d36; --ink:#e8edf2; --ink-2:#9aa8b6; --line:#333d48;
+  --accent:#ff8a4c; --on-accent:#1a1006; --goal:#69db7c; --goal-bg:#1f4a2c; --path:#74c0fc; --wall:#5d6a77; --grid:rgba(232,237,242,.05);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.55;
+  padding-block:28px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:980px;margin:0 auto}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,6vw,40px);line-height:1.1;margin:0 0 10px;text-wrap:balance}
+.lede{max-width:56ch;margin:0 0 22px;color:var(--ink-2);font-size:16px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:860px){.layout{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
+.stage,.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
+#board{display:block;width:100%;height:auto;touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.status{margin:12px 0 4px;min-height:3em;font-size:15px}
+.hint{margin:0;font-size:13px;color:var(--ink-2)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.stat{background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.stat span{display:block;font-size:12px;color:var(--ink-2)}
+.stat b{display:block;font-family:var(--f-mono);font-weight:500;font-size:20px;font-variant-numeric:tabular-nums}
+h2{font-family:var(--f-display);font-weight:600;font-size:17px;margin:0 0 8px}
+.chartwrap{margin-bottom:14px}
+#chart{display:block;width:100%;height:auto}
+.btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
+button{font:inherit;font-weight:500;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:44px;cursor:pointer}
+button:hover{border-color:var(--ink-2)}
+button:active{transform:scale(.98)}
+button.main{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+button.linky{background:none;border:none;padding:0;min-height:0;color:var(--path);font-size:13px;text-decoration:underline;text-underline-offset:2px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--path);outline-offset:2px}
+.sl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;margin-bottom:12px}
+.sl label{font-weight:500}
+.sl output{font-family:var(--f-mono);font-size:14px;font-variant-numeric:tabular-nums}
+.sl input{grid-column:1 / -1;width:100%;accent-color:var(--accent)}
+.sl small{grid-column:1 / -1;color:var(--ink-2);font-size:13px}
+.explain{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 22px;margin:0}
+.terms dt{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.terms dd{margin:0;color:var(--ink-2)}
+.foot{margin:16px 0 0;font-size:13px;color:var(--ink-2);max-width:70ch}
+.roberta{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:14px}
+.roberta .eyebrow{margin:0}
+.roberta h2{font-size:22px;margin:0;text-wrap:balance}
+.roberta p{margin:0;max-width:65ch}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.fig{background:var(--surface-2);border-radius:8px;padding:10px 12px;min-width:0}
+.fig b{display:block;font-family:var(--f-mono);font-weight:500;font-size:22px;font-variant-numeric:tabular-nums;color:var(--accent)}
+.fig span{display:block;font-size:13px;color:var(--ink-2)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px 22px}
+.cols h3{font-family:var(--f-display);font-weight:600;font-size:15px;margin:0 0 4px}
+.cols p{color:var(--ink-2)}
+.roberta blockquote{margin:0;padding:2px 0 2px 14px;border-left:3px solid var(--goal);max-width:65ch}
+.roberta blockquote p{color:var(--ink)}
+.roberta blockquote cite{display:block;font-style:normal;font-size:13px;color:var(--ink-2);margin-top:4px}
+.links{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px}
+.links a{color:var(--path);text-underline-offset:2px}
+.links a:focus-visible{outline:2px solid var(--path);outline-offset:2px}
+.src{font-size:12px;color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){button:active{transform:none}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style id="werkstatt-look">
+:root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+  --bg:#0e1625;--surface:#162238;--surface-2:#1e2d47;--ink:#edf2fb;--ink-2:#97a6c2;--line:#2b3b59;
+  --accent:#ff7a5c;--on-accent:#1a0d08;--path:#5aa2ff;--ok:#4fd1a1;--ok-bg:#1f3d39;--bad:#ff7a5c;--bad-bg:#4a2323;
+  --goal:#4fd1a1;--goal-bg:#1f3d39;--wall:#5d6a77;--track:#c6cfdd;--lamp:#ffc857;--grid:transparent;
+  --f-display:"Fredoka","Baloo 2",system-ui,sans-serif;--f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark}
+body{background-image:none!important;background-color:var(--bg)!important;font-size:14px}
+h1,h2,h3{font-family:var(--f-display)}
+.eyebrow,.no{color:var(--accent)!important}
+button{border-radius:9px;min-height:34px!important;padding:5px 10px!important;font-size:.85rem;font-family:var(--f-display);font-weight:600;background:var(--surface-2);border-color:var(--line)!important;border-width:1px!important}
+button.main,.btns .main{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--on-accent)!important}
+.box,.stage,.panel,.tasks li,.nuki,.roberta{border-radius:14px!important}
+.wrap{padding-bottom:12px}
+</style>
+
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">Reinforcement Learning</p>
+    <h1>Roboter-Lernlabor</h1>
+    <p class="lede">Der Bot kennt die Karte nicht. Er probiert aus, bekommt Belohnung oder Abzug und merkt sich, was funktioniert hat. Schau zu, wie aus Zufall ein Weg wird.</p>
+  </header>
+
+  <div class="layout">
+    <section class="stage" aria-label="Spielfeld">
+      <svg id="board" viewBox="0 0 336 336" role="img" aria-label="Gitterwelt mit Roboter, Mauern und Ziel"></svg>
+      <p class="status" id="status" aria-live="polite">Drücke „1 Episode“. Der Bot startet unten links und sucht das Ziel oben rechts.</p>
+      <p class="hint">Tippe auf ein leeres Feld, um eine Mauer zu setzen oder zu entfernen. <button class="linky" id="bmap" type="button">Standardkarte laden</button></p>
+    </section>
+
+    <section class="panel" aria-label="Messwerte und Regler">
+      <div class="stats">
+        <div class="stat"><span>Episoden</span><b id="s1">0</b></div>
+        <div class="stat"><span>Schritte</span><b id="s2">-</b></div>
+        <div class="stat"><span>Belohnung</span><b id="s3">-</b></div>
+      </div>
+
+      <div class="chartwrap">
+        <h2>Lernkurve</h2>
+        <svg id="chart" viewBox="0 0 336 112" role="img" aria-label="Schritte pro Episode"></svg>
+      </div>
+
+      <div class="btns">
+        <button class="main" id="b1" type="button">1 Episode</button>
+        <button id="b2" type="button">50 Episoden</button>
+        <button id="b3" type="button">Weg ohne Zufall testen</button>
+        <button id="b4" type="button">Gelerntes löschen</button>
+      </div>
+
+      <div class="sl">
+        <label for="eps">Zufall</label><output id="epsv" for="eps">30 %</output>
+        <input type="range" id="eps" min="0" max="100" step="5" value="30">
+        <small>Wie oft der Bot etwas Neues ausprobiert, statt den bisher besten Weg zu nehmen.</small>
+      </div>
+      <div class="sl">
+        <label for="alp">Lernrate</label><output id="alpv" for="alp">0,5</output>
+        <input type="range" id="alp" min="0.1" max="1" step="0.1" value="0.5">
+        <small>Wie stark neue Erfahrungen das bisherige Wissen überschreiben.</small>
+      </div>
+      <div class="sl" style="margin-bottom:0">
+        <label for="gam">Weitsicht</label><output id="gamv" for="gam">0,90</output>
+        <input type="range" id="gam" min="0.5" max="0.99" step="0.01" value="0.9">
+        <small>Wie stark der Bot an spätere Belohnung denkt, nicht nur an den nächsten Schritt.</small>
+      </div>
+    </section>
+  </div>
+
+  <section class="explain" aria-label="Begriffe">
+    <h2>Die Begriffe</h2>
+    <dl class="terms">
+      <div><dt>Agent</dt><dd>Der Bot. Er wählt in jedem Feld eine Richtung: hoch, rechts, runter oder links.</dd></div>
+      <div><dt>Umgebung</dt><dd>Das Gitter mit Mauern und Ziel. Sie antwortet auf jede Aktion mit einem neuen Feld und einer Belohnung.</dd></div>
+      <div><dt>Belohnung</dt><dd>Ziel: +10. Jeder Schritt: −0,1. Gegen eine Mauer laufen: −0,5. Daraus folgt: kurze Wege lohnen sich.</dd></div>
+      <div><dt>Q-Tabelle</dt><dd>Das Gedächtnis des Bots. Für jedes Feld und jede Richtung steht dort, wie gut sie bisher war. Die Pfeile zeigen die beste Richtung, grünere Felder sind wertvoller.</dd></div>
+    </dl>
+    <p class="foot">Dieselbe Idee steckt in echten Robotern. Statt vier Richtungen gibt es dort viele Motoren, und ein neuronales Netz ersetzt die Tabelle. Hier ist es klein genug, um jede Zeile des Gedächtnisses zu sehen.</p>
+  </section>
+
+  <section class="roberta" aria-labelledby="rob-h">
+    <p class="eyebrow">Aus der Praxis · Fraunhofer IAIS</p>
+    <h2 id="rob-h">20 Jahre „Roberta – Lernen mit Robotern“</h2>
+    <p>Was du hier im Kleinen ausprobierst, passt zu einer der größten MINT-Bildungsinitiativen in Deutschland. Seit 2002 bringt das Fraunhofer-Institut für Intelligente Analyse- und Informationssysteme IAIS in Sankt Augustin Kindern und Jugendlichen das Programmieren mit Robotern bei, von der Grundschule bis in die Sek II sowie in Aus- und Fortbildung. Gestartet ist Roberta als Förderprojekt des Bundesministeriums für Bildung und Forschung.</p>
+    <div class="figs">
+      <div class="fig"><b>3500+</b><span>Lehrkräfte zu Roberta Teachers geschult</span></div>
+      <div class="fig"><b>650 000+</b><span>Schüler*innen über diese Kurse erreicht</span></div>
+      <div class="fig"><b>10 Mio.+</b><span>Nutzer*innen im Open Roberta Lab</span></div>
+      <div class="fig"><b>120+</b><span>Länder, aus denen Kinder programmieren</span></div>
+    </div>
+    <div class="cols">
+      <div><h3>Open Roberta Lab</h3><p>Die kostenlose, grafische Programmierplattform gibt es seit 2014, entwickelt mit Unterstützung von Google.org. Per Drag and Drop entstehen Programme für verschiedene Roboter und Mikrocontroller. Sie läuft auf einem Fraunhofer-Server in Sankt Augustin und setzt keine Cookies ein.</p></div>
+      <div><h3>Künstliche Intelligenz</h3><p>Seit Sommer 2022 sind auch künstliche neuronale Netze in Open Roberta integriert. KI-Algorithmen sollen so durch grafische Programmierung erlebbar werden. Unterstützt wird das durch das im September 2022 eröffnete Lamarr-Institut, eines von fünf universitären KI-Kompetenzzentren.</p></div>
+      <div><h3>Mädchen und Jungen</h3><p>Mädchen schätzen ihre Fähigkeiten in Mathematik schon ab der fünften Klasse geringer ein als Jungen (DIW Berlin). Roberta schult Lehrkräfte deshalb so, dass Ansprache und Experimente beide Geschlechter erreichen. Erfolgserlebnisse stärken das Selbstvertrauen.</p></div>
+    </div>
+    <blockquote><p>„Roboter bieten für Kinder und Jugendliche einen attraktiven Zugang zur Informatik.“</p><cite>Beate Jost, technische Leiterin der Roberta-Initiative</cite></blockquote>
+    <blockquote><p>„Die Kinder merken, dass Programmieren nicht nur etwas für Experten ist und sie selbst etwas gestalten können. Motivation und Spaß sind die ersten wichtigsten Schritte.“</p><cite>Thorsten Leimbach, Geschäftsfeldleiter „Smart Coding and Learning“, Fraunhofer IAIS</cite></blockquote>
+    <div class="links">
+      <a href="https://www.roberta-home.de/" target="_blank" rel="noopener">Roberta-Initiative</a>
+      <a href="https://lab.open-roberta.org/" target="_blank" rel="noopener">Open Roberta Lab ausprobieren</a>
+      <a href="https://www.roberta-home.de/initiative/20-jahre-roberta/" target="_blank" rel="noopener">20 Jahre Roberta</a>
+    </div>
+    <p class="src">Quelle: Presseinformation des Fraunhofer IAIS „»Roberta – Lernen mit Robotern« feiert 20. Geburtstag“, 31. Oktober 2022. Zahlen auf dem Stand von damals.</p>
+  </section>
+</main>
+
+<script>
+var N=7,C=48,CAP=60;
+var DX=[0,1,0,-1],DY=[-1,0,1,0],AR=['↑','→','↓','←'];
+var START=[0,6],GOAL=[6,0];
+var DEFAULT_WALLS=['1,3','2,3','3,3','4,3','2,5','3,5','4,1','5,1'];
+var walls={},Q={},hist=[],nEp=0,busy=false,lastPath=[START],pos=START;
+var eps=0.3,alpha=0.5,gamma=0.9;
+var $=function(id){return document.getElementById(id);};
+function key(x,y){return x+','+y;}
+function setWalls(list){walls={};list.forEach(function(k){walls[k]=1;});}
+function shortest(){
+  var q=[[START[0],START[1],0]],seen={};seen[key(START[0],START[1])]=1;
+  while(q.length){var c=q.shift();if(c[0]===GOAL[0]&&c[1]===GOAL[1])return c[2];
+    for(var a=0;a<4;a++){var nx=c[0]+DX[a],ny=c[1]+DY[a],k=key(nx,ny);
+      if(nx<0||ny<0||nx>=N||ny>=N||walls[k]||seen[k])continue;seen[k]=1;q.push([nx,ny,c[2]+1]);}}
+  return -1;
+}
+function resetQ(){Q={};for(var x=0;x<N;x++)for(var y=0;y<N;y++)Q[key(x,y)]=[0,0,0,0];hist=[];nEp=0;lastPath=[START];pos=START;}
+function mx(k){var q=Q[k];return Math.max(q[0],q[1],q[2],q[3]);}
+function pick(k,e){
+  if(Math.random()<e)return Math.floor(Math.random()*4);
+  var q=Q[k],m=mx(k),c=[];for(var i=0;i<4;i++)if(q[i]===m)c.push(i);
+  return c[Math.floor(Math.random()*c.length)];
+}
+function episode(e,learn){
+  var s=START,p=[START],tot=0,reached=false;
+  for(var t=0;t<CAP;t++){
+    var k=key(s[0],s[1]),a=pick(k,e),nx=s[0]+DX[a],ny=s[1]+DY[a],r=-0.1,done=false;
+    if(nx<0||ny<0||nx>=N||ny>=N||walls[key(nx,ny)]){nx=s[0];ny=s[1];r=-0.5;}
+    else if(nx===GOAL[0]&&ny===GOAL[1]){r=10;done=true;}
+    if(learn){Q[k][a]+=alpha*(r+(done?0:gamma*mx(key(nx,ny)))-Q[k][a]);}
+    tot+=r;s=[nx,ny];p.push(s);
+    if(done){reached=true;break;}
+  }
+  return {p:p,tot:tot,steps:p.length-1,reached:reached};
+}
+function draw(path,rp){
+  var h='',x,y;
+  for(x=0;x<N;x++)for(y=0;y<N;y++){
+    var k=key(x,y),px=x*C,py=y*C,w=walls[k];
+    h+='<rect x="'+(px+1)+'" y="'+(py+1)+'" width="'+(C-2)+'" height="'+(C-2)+'" rx="4" style="fill:'+(w?'var(--wall)':'var(--surface-2)')+'"/>';
+    if(!w){
+      var m=mx(k);
+      if(m>0)h+='<rect x="'+(px+1)+'" y="'+(py+1)+'" width="'+(C-2)+'" height="'+(C-2)+'" rx="4" style="fill:var(--goal);opacity:'+Math.min(0.6,m/12)+'"/>';
+      var q=Q[k];
+      if((q[0]||q[1]||q[2]||q[3])&&!(x===GOAL[0]&&y===GOAL[1]))
+        h+='<text x="'+(px+C/2)+'" y="'+(py+C/2+7)+'" text-anchor="middle" style="font-family:var(--f-mono);font-size:20px;fill:var(--ink-2)">'+AR[pick(k,0)]+'</text>';
+    }
+  }
+  h+='<rect x="'+(GOAL[0]*C+1)+'" y="'+(GOAL[1]*C+1)+'" width="'+(C-2)+'" height="'+(C-2)+'" rx="4" style="fill:var(--goal-bg);stroke:var(--goal);stroke-width:2"/>';
+  h+='<text x="'+(GOAL[0]*C+C/2)+'" y="'+(GOAL[1]*C+C/2+4)+'" text-anchor="middle" style="font-family:var(--f-mono);font-size:12px;font-weight:500;fill:var(--goal)">Ziel</text>';
+  h+='<text x="'+(START[0]*C+C/2)+'" y="'+(START[1]*C+C-6)+'" text-anchor="middle" style="font-family:var(--f-mono);font-size:10px;fill:var(--ink-2)">Start</text>';
+  if(path.length>1){
+    var pts=path.map(function(s){return (s[0]*C+C/2)+','+(s[1]*C+C/2);}).join(' ');
+    h+='<polyline points="'+pts+'" fill="none" stroke-linejoin="round" stroke-linecap="round" style="stroke:var(--path);stroke-width:3;opacity:.7"/>';
+  }
+  h+='<circle cx="'+(rp[0]*C+C/2)+'" cy="'+(rp[1]*C+C/2)+'" r="15" style="fill:var(--accent)"/>';
+  h+='<text x="'+(rp[0]*C+C/2)+'" y="'+(rp[1]*C+C/2+4)+'" text-anchor="middle" style="font-family:var(--f-mono);font-size:11px;font-weight:500;fill:var(--on-accent)">Bot</text>';
+  $('board').innerHTML=h;
+}
+function drawChart(){
+  var W=336,H=112,L=30,R=8,T=8,B=18,opt=shortest(),h='';
+  var yy=function(v){return T+(H-T-B)*(1-v/CAP);};
+  [0,CAP].forEach(function(v){
+    h+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy(v)+'" y2="'+yy(v)+'" style="stroke:var(--line);stroke-width:1"/>';
+    h+='<text x="'+(L-6)+'" y="'+(yy(v)+4)+'" text-anchor="end" style="font-family:var(--f-mono);font-size:11px;fill:var(--ink-2)">'+v+'</text>';
+  });
+  if(opt>0){
+    h+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy(opt)+'" y2="'+yy(opt)+'" style="stroke:var(--goal);stroke-width:1;stroke-dasharray:4 3"/>';
+    h+='<text x="'+(W-R)+'" y="'+(yy(opt)-4)+'" text-anchor="end" style="font-family:var(--f-mono);font-size:11px;fill:var(--goal)">kürzester Weg: '+opt+'</text>';
+  }
+  if(hist.length===0){
+    h+='<text x="'+(W/2)+'" y="'+(H/2+4)+'" text-anchor="middle" style="font-family:var(--f-body);font-size:13px;fill:var(--ink-2)">Noch keine Episode gelernt</text>';
+  }else{
+    var n=hist.length,xs=function(i){return L+(n<2?0:(W-L-R)*i/(n-1));};
+    var pts=hist.map(function(v,i){return xs(i)+','+yy(v);}).join(' ');
+    h+='<polyline points="'+pts+'" fill="none" stroke-linejoin="round" style="stroke:var(--path);stroke-width:2"/>';
+    h+='<circle cx="'+xs(n-1)+'" cy="'+yy(hist[n-1])+'" r="3.5" style="fill:var(--accent)"/>';
+  }
+  h+='<text x="'+L+'" y="'+(H-3)+'" style="font-family:var(--f-mono);font-size:11px;fill:var(--ink-2)">Episode 1</text>';
+  h+='<text x="'+(W-R)+'" y="'+(H-3)+'" text-anchor="end" style="font-family:var(--f-mono);font-size:11px;fill:var(--ink-2)">Episode '+Math.max(hist.length,1)+'</text>';
+  $('chart').innerHTML=h;
+}
+function stats(last){
+  $('s1').textContent=String(nEp);
+  $('s2').textContent=last?String(last.steps):'-';
+  $('s3').textContent=last?(Math.round(last.tot*10)/10).toFixed(1).replace('.',','):'-';
+}
+function say(t){$('status').textContent=t;}
+function run(n,e,learn){
+  if(busy)return;
+  if(shortest()<0){say('Zwischen Start und Ziel gibt es keinen Weg mehr. Entferne eine Mauer.');return;}
+  var r,i;
+  for(i=0;i<n;i++){r=episode(e,learn);if(learn){nEp++;hist.push(r.steps);}}
+  var msg;
+  if(learn){
+    msg=(n>1?n+' Episoden gelernt. ':'')+'Episode '+nEp+': '+(r.reached?'Ziel nach '+r.steps+' Schritten.':'Ziel in '+CAP+' Schritten nicht erreicht.');
+  }else{
+    var opt=shortest();
+    msg=r.reached?('Test ohne Zufall: Ziel nach '+r.steps+' Schritten'+(r.steps===opt?'. Das ist der kürzeste Weg.':'. Der kürzeste Weg hätte '+opt+' Schritte.')):'Test ohne Zufall: Der Bot kommt nicht an. Er hat noch zu wenig gelernt und dreht sich im Kreis.';
+  }
+  busy=true;var j=0,p=r.p;
+  var iv=setInterval(function(){
+    draw(p.slice(0,j+1),p[j]);j++;
+    if(j>=p.length){clearInterval(iv);busy=false;lastPath=p;pos=p[p.length-1];stats(r);drawChart();say(msg);draw(p,pos);}
+  },60);
+}
+$('b1').onclick=function(){run(1,eps,true);};
+$('b2').onclick=function(){run(50,eps,true);};
+$('b3').onclick=function(){run(1,0,false);};
+$('b4').onclick=function(){if(busy)return;resetQ();stats(null);drawChart();draw(lastPath,START);say('Gedächtnis gelöscht. Der Bot weiß wieder nichts über die Karte.');};
+$('bmap').onclick=function(){if(busy)return;setWalls(DEFAULT_WALLS);resetQ();stats(null);drawChart();draw(lastPath,START);say('Standardkarte geladen.');};
+function fmt(v,d){return v.toFixed(d).replace('.',',');}
+$('eps').oninput=function(){eps=this.value/100;$('epsv').textContent=this.value+' %';};
+$('alp').oninput=function(){alpha=parseFloat(this.value);$('alpv').textContent=fmt(alpha,1);};
+$('gam').oninput=function(){gamma=parseFloat(this.value);$('gamv').textContent=fmt(gamma,2);};
+$('board').addEventListener('click',function(ev){
+  if(busy)return;
+  var r=this.getBoundingClientRect();
+  var x=Math.floor((ev.clientX-r.left)/r.width*N),y=Math.floor((ev.clientY-r.top)/r.height*N);
+  if(x<0||y<0||x>=N||y>=N)return;
+  if((x===START[0]&&y===START[1])||(x===GOAL[0]&&y===GOAL[1]))return;
+  var k=key(x,y),had=walls[k];
+  if(had)delete walls[k];else walls[k]=1;
+  if(shortest()<0){delete walls[k];say('Dort würde der Weg zum Ziel versperrt. Die Mauer bleibt weg.');return;}
+  resetQ();stats(null);drawChart();draw(lastPath,START);
+  say(had?'Mauer entfernt. Der Bot lernt neu.':'Mauer gesetzt. Der Bot lernt neu.');
+});
+setWalls(DEFAULT_WALLS);resetQ();stats(null);drawChart();draw(lastPath,START);
+</script>
+
+</body></html>

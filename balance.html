@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Stab-Balance</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{--bg:#0e1625;--panel:#162238;--panel2:#1e2d47;--ink:#edf2fb;--muted:#97a6c2;--line:#2b3b59;--coral:#ff7a5c;--mint:#4fd1a1;--sensor:#5aa2ff;--amber:#ffc857;
+  --f-display:"Fredoka","Baloo 2",system-ui,sans-serif;--f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;padding:12px max(12px,env(safe-area-inset-right,0px)) 20px max(12px,env(safe-area-inset-left,0px))}
+.wrap{max-width:980px;margin:0 auto;display:grid;gap:10px}
+.eyebrow{font:700 .7rem var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--coral);margin:0}
+h1{font:700 clamp(1.5rem,5vw,2.1rem) var(--f-display);margin:0;line-height:1.1}
+h2{font:600 1rem var(--f-display);margin:0 0 6px}
+.lede{margin:0;color:var(--muted);max-width:62ch}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media (min-width:860px){.layout{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:start}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;min-width:0}
+#cp{display:block;width:100%;height:auto}
+.status{margin:6px 0 0;min-height:2.6em}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.stat{background:var(--bg);border-radius:8px;padding:5px 9px}
+.stat span{display:block;font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stat b{display:block;font:600 1.1rem var(--f-display);font-variant-numeric:tabular-nums}
+.vals{background:var(--bg);border-radius:8px;padding:6px 10px;margin-bottom:8px}
+.vals .cap{font-size:.7rem;color:var(--muted);margin-bottom:2px}
+.vals .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 12px;font-size:.8rem;line-height:1.7;font-variant-numeric:tabular-nums}
+.vals .row span:nth-child(odd){color:var(--muted)}.vals .row span:nth-child(even){text-align:right;font-weight:700}
+.btns{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+button{font:600 .82rem var(--f-display);color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:6px 11px;min-height:34px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--coral);border-color:var(--coral);color:#1a0d08}
+button:focus-visible,input:focus-visible{outline:2px solid var(--sensor);outline-offset:2px}
+.chk{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.85rem}
+.chk input{accent-color:var(--mint);width:17px;height:17px}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px 18px;margin:0}
+.terms dt{font:700 .7rem var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-bottom:2px}
+.terms dd{margin:0;color:var(--muted);font-size:.88rem}
+.foot{margin:8px 0 0;font-size:.78rem;color:var(--muted)}
+</style></head><body>
+<main class="wrap">
+  <header><p class="eyebrow">Reinforcement Learning</p><h1>Stab-Balance</h1>
+  <p class="lede">Ein Wagen soll einen Stab senkrecht halten. Er darf nur nach links oder rechts schieben. Vergleiche zufällige Aktionen mit einer Regel, die aus vier Zahlen die richtige Richtung wählt.</p></header>
+  <div class="layout">
+    <section class="box" aria-label="Wagen mit Stab"><svg id="cp" viewBox="0 0 336 180" role="img" aria-label="Wagen auf einer Schiene mit einem Stab, der balanciert werden soll"></svg><p class="status" id="msg" aria-live="polite"></p></section>
+    <section class="box" aria-label="Messwerte und Knöpfe">
+      <div class="stats"><div class="stat"><span>Schritte jetzt</span><b id="st">0</b></div><div class="stat"><span>Ø in diesem Modus</span><b id="av">-</b></div></div>
+      <div class="vals"><div class="cap">Die vier Zahlen, die das Netz sieht</div><div class="row">
+        <span>Position x</span><span id="v0">0,00</span><span>Geschwindigkeit</span><span id="v1">0,00</span><span>Stabwinkel</span><span id="v2">0,0°</span><span>Stabdrehung</span><span id="v3">0,00</span><span>Aktion</span><span id="v4">-</span></div></div>
+      <div class="btns"><button id="m0" type="button" aria-pressed="true">Zufällige Aktionen</button><button id="m1" type="button" aria-pressed="false">Gelernte Regel</button></div>
+      <label class="chk"><input type="checkbox" id="slow" checked> Zeitlupe</label>
+    </section>
+  </div>
+  <section class="box" aria-label="Begriffe"><h2>Was hier passiert</h2><dl class="terms">
+    <div><dt>Zustand</dt><dd>Vier Zahlen: Position und Geschwindigkeit des Wagens, Winkel und Drehgeschwindigkeit des Stabs.</dd></div>
+    <div><dt>Aktion</dt><dd>Der Wagen wird in jedem Schritt mit fester Kraft nach links oder rechts geschoben. Mehr gibt es nicht.</dd></div>
+    <div><dt>Belohnung</dt><dd>+1 für jeden Schritt, in dem der Stab oben bleibt. Der Versuch endet bei mehr als 12° Neigung oder am Schienenende. Das Maximum sind 500 Schritte.</dd></div>
+    <div><dt>Regel statt Netz</dt><dd>Die „gelernte Regel“ ist eine einfache Rechnung mit denselben vier Zahlen und kein trainiertes Netz. Ein Netz mit PPO macht im Prinzip dasselbe: vier Zahlen hinein, links oder rechts heraus.</dd></div>
+  </dl><p class="foot">Die Physik entspricht der Aufgabe CartPole-v1 aus der Bibliothek Gymnasium. Zeitlupe verlangsamt die Simulation auf ein Fünftel der Echtzeit.</p></section>
+</main>
+<script>
+var G=9.8,TM=1.1,LEN=0.5,PML=0.05,MP=0.1,TAU=0.02,F=10,LIM_X=2.4,LIM_T=0.2095;
+var mode=0,s,steps=0,over=false,reason='',pauseUntil=0,act=0,acc=0,last=0,res=[[],[]];
+var $=function(i){return document.getElementById(i);};
+function rnd(){return (Math.random()-0.5)*0.1;}
+function reset(){s={x:rnd(),xd:rnd(),th:rnd(),thd:rnd()};steps=0;over=false;reason='';act=0;}
+function policy(){if(mode===0)return Math.random()<0.5?1:-1;return (0.1*s.x+0.5*s.xd+s.th+s.thd)>0?1:-1;}
+function step(){
+  act=policy();var f=F*act,c=Math.cos(s.th),sn=Math.sin(s.th);
+  var tmp=(f+PML*s.thd*s.thd*sn)/TM;
+  var tha=(G*sn-c*tmp)/(LEN*(4/3-MP*c*c/TM)),xa=tmp-PML*tha*c/TM;
+  s.x+=TAU*s.xd;s.xd+=TAU*xa;s.th+=TAU*s.thd;s.thd+=TAU*tha;steps++;
+  if(Math.abs(s.x)>LIM_X){over=true;reason='Wagen über das Schienenende';}
+  else if(Math.abs(s.th)>LIM_T){over=true;reason='Stab zu schief';}
+  else if(steps>=500){over=true;reason='max';}
+  if(over){res[mode].push(steps);pauseUntil=performance.now()+1400;showEnd();}
+}
+function showEnd(){$('msg').textContent=reason==='max'?'500 Schritte: Maximum erreicht. Der Stab blieb oben.':'Nach '+steps+' Schritten gescheitert ('+reason+').';}
+function f2(v){return v.toFixed(2).replace('.',',');}
+function draw(){
+  var cx=168+s.x*58,py=118,L=72,tx=cx+L*Math.sin(s.th),ty=py-L*Math.cos(s.th),h='',lim=LIM_T;
+  var x0=168-LIM_X*58,x1=168+LIM_X*58;
+  h+='<line x1="'+x0+'" x2="'+x1+'" y1="142" y2="142" style="stroke:#97a6c2;stroke-width:2"/>';
+  h+='<line x1="'+x0+'" x2="'+x0+'" y1="134" y2="150" style="stroke:#ff7a5c;stroke-width:2"/><line x1="'+x1+'" x2="'+x1+'" y1="134" y2="150" style="stroke:#ff7a5c;stroke-width:2"/>';
+  h+='<line x1="'+cx+'" y1="'+py+'" x2="'+(cx+110*Math.sin(lim))+'" y2="'+(py-110*Math.cos(lim))+'" style="stroke:#97a6c2;stroke-width:1;stroke-dasharray:3 3;opacity:.7"/><line x1="'+cx+'" y1="'+py+'" x2="'+(cx-110*Math.sin(lim))+'" y2="'+(py-110*Math.cos(lim))+'" style="stroke:#97a6c2;stroke-width:1;stroke-dasharray:3 3;opacity:.7"/>';
+  h+='<rect x="'+(cx-22)+'" y="'+py+'" width="44" height="24" rx="4" style="fill:#1e2d47;stroke:#97a6c2;stroke-width:1"/>';
+  h+='<circle cx="'+(cx-12)+'" cy="144" r="4" style="fill:#97a6c2"/><circle cx="'+(cx+12)+'" cy="144" r="4" style="fill:#97a6c2"/>';
+  h+='<line x1="'+cx+'" y1="'+py+'" x2="'+tx+'" y2="'+ty+'" stroke-linecap="round" style="stroke:'+(over&&reason!=='max'?'#ff7a5c':'#4fd1a1')+';stroke-width:7"/>';
+  h+='<circle cx="'+cx+'" cy="'+py+'" r="4" style="fill:#1e2d47;stroke:#97a6c2;stroke-width:1.5"/>';
+  if(!over&&act!==0){var d=act>0?1:-1;h+='<path d="M'+(cx+d*26)+' '+(py+12)+' L'+(cx+d*44)+' '+(py+12)+' M'+(cx+d*38)+' '+(py+6)+' L'+(cx+d*44)+' '+(py+12)+' L'+(cx+d*38)+' '+(py+18)+'" fill="none" stroke-linecap="round" stroke-linejoin="round" style="stroke:#edf2fb;stroke-width:2.5"/>';}
+  $('cp').innerHTML=h;$('st').textContent=steps;
+  var r=res[mode],a=r.length?Math.round(r.reduce(function(p,q){return p+q;},0)/r.length):'-';$('av').textContent=a;
+  $('v0').textContent=f2(s.x);$('v1').textContent=f2(s.xd);$('v2').textContent=(s.th*180/Math.PI).toFixed(1).replace('.',',')+'°';$('v3').textContent=f2(s.thd);
+  $('v4').textContent=over?'-':(act>0?'rechts':act<0?'links':'-');
+}
+function setMode(m){mode=m;reset();$('m0').setAttribute('aria-pressed',m===0?'true':'false');$('m1').setAttribute('aria-pressed',m===1?'true':'false');
+  $('msg').textContent=m===0?'Zufällige Aktionen: Der Stab fällt fast sofort.':'Gelernte Regel: Aus den vier Zahlen wird links oder rechts gewählt.';}
+function frame(t){
+  var dt=Math.min(0.1,(t-last)/1000);last=t;
+  if(over){if(t>pauseUntil){reset();$('msg').textContent=mode===0?'Zufällige Aktionen: neuer Versuch.':'Gelernte Regel: neuer Versuch.';}}
+  else{acc+=dt*($('slow').checked?10:50);while(acc>=1&&!over){step();acc-=1;}}
+  draw();requestAnimationFrame(frame);
+}
+$('m0').onclick=function(){setMode(0);};$('m1').onclick=function(){setMode(1);};
+setMode(0);requestAnimationFrame(function(t){last=t;frame(t);});
+</script></body></html>

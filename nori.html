@@ -1,0 +1,1434 @@
+<!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nori-Werkstatt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: Ein-Bildschirm-App. Handy: Kopfzeile, 3D-Bühne, Erklärfenster, Steuerpult untereinander. Breit: Bühne links, Erklärfenster und Pult rechts. Bewusst ein dunkles Werkstatt-Design. */
+:root{
+  --bg:#0e1625; --panel:#162238; --panel2:#1e2d47; --ink:#edf2fb; --muted:#97a6c2; --line:#2b3b59;
+  --coral:#ff7a5c; --mint:#4fd1a1; --sensor:#5aa2ff; --motor:#ffa24a; --amber:#ffc857; --body:#c6cfdd; --screen:#a68bff;
+  --f-display:"Fredoka","Baloo 2",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html{height:100%;box-sizing:border-box}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.4;overflow:hidden}
+button,select,input{font:inherit;color:inherit}
+.app{height:100%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(170px,1fr) auto auto;gap:6px;padding-block:6px;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px));max-width:1400px;margin:0 auto}
+.top{display:flex;align-items:center;gap:8px;min-width:0}
+.brand{display:grid;line-height:1.1;min-width:0;margin-right:auto}
+.brand b{font-family:var(--f-display);font-weight:700;font-size:1.15rem;white-space:nowrap}
+.brand b span{color:var(--coral)}
+.brand small{color:var(--amber);font-size:.72rem;letter-spacing:.02em;white-space:nowrap}
+.tabs{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px}
+.tabs button{border:0;background:none;border-radius:999px;padding:4px 10px;font:600 .8rem var(--f-display);color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--coral);color:#1a0d08}
+.tabs button{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.tabs button b{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--panel2);font-size:.66rem;flex:none}
+.tabs button[aria-selected="true"] b{background:#1a0d08;color:var(--coral)}
+.tabs button.done b{background:var(--mint);color:#06281c}
+.tabs button.next{box-shadow:inset 0 0 0 2px var(--amber);animation:nx 1.4s ease-in-out infinite}
+@keyframes nx{50%{box-shadow:inset 0 0 0 2px transparent}}
+@media (max-width:759px){.tabs button span{display:none}.tabs button{padding:3px 4px!important}}
+.sts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.st{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:3px 2px;font:600 .68rem var(--f-display);color:var(--ink);cursor:pointer;display:grid;justify-items:center;line-height:1.15;min-width:0}
+.st small{font-size:.62rem;color:var(--muted);font-weight:400;white-space:nowrap}
+.st[aria-pressed="true"]{border-color:var(--coral);outline:1px solid var(--coral)}
+.st.ok{background:#1f3d39;border-color:#2e6658}.st.ok small{color:var(--mint)}
+.stars{color:var(--amber);letter-spacing:1px}
+.tabs button:disabled{opacity:.35;cursor:not-allowed}
+.ib{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 9px;font:600 .78rem var(--f-display);cursor:pointer;white-space:nowrap}
+.stage{position:relative;min-height:0;border-radius:16px;overflow:hidden;background:radial-gradient(120% 90% at 50% 25%,#2a3d5e 0%,#16243b 55%,#0f1828 100%);border:1px solid var(--line)}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.bubble{position:absolute;left:8px;top:8px;max-width:min(75%,340px);background:rgba(14,22,37,.55);border:1px solid rgba(255,255,255,.1);border-radius:10px 10px 10px 3px;padding:3px 8px;font-size:.72rem;line-height:1.3;transition:opacity .4s;max-height:calc(2.6em + 7px);overflow:hidden;cursor:pointer;backdrop-filter:blur(2px)}
+.bubble.fade,.bubble.off{opacity:0;pointer-events:none}
+.bubble b{font-family:var(--f-display);font-weight:600;color:var(--amber)}
+.tools{position:absolute;left:8px;bottom:8px;right:8px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.pill{border:1px solid var(--line);background:rgba(22,34,56,.9);border-radius:999px;padding:3px 9px;font:600 .72rem var(--f-display);cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.pill.warn{background:var(--coral);border-color:var(--coral);color:#1a0d08;margin-left:auto;font-size:.8rem;padding:5px 12px}
+.explain{background:var(--panel);border:1px solid var(--line);border-radius:14px;display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;max-height:min(30vh,240px);height:min(30vh,240px)}
+.exhead{display:flex;align-items:center;gap:6px;padding:6px 10px 4px;border-bottom:1px solid var(--line);min-width:0}
+.exhead h2{font:600 .9rem var(--f-display);margin:0 auto 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.exmodes{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto}
+.exmodes button{border:0;background:var(--panel2);border-radius:999px;padding:2px 8px;font:600 .7rem var(--f-display);color:var(--muted);cursor:pointer;white-space:nowrap}
+.exmodes button[aria-pressed="true"]{background:var(--mint);color:#06281c}
+.exbody{overflow-y:auto;padding:7px 10px 9px;font-size:.84rem;min-height:0}
+.exbody p{margin:0 0 6px}
+.exbody h4{margin:6px 0 2px;font:600 .86rem var(--f-display)}
+.exbody ul,.exbody ol{margin:0 0 6px;padding-left:1.2em}
+.chip{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:99px;padding:1px 8px;color:#0e1625;margin-bottom:4px}
+.ctrl{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:7px 8px;display:grid;gap:6px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-width:0}
+.b{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:4px 9px;font:600 .78rem var(--f-display);cursor:pointer;white-space:nowrap}
+.b.main{background:var(--coral);border-color:var(--coral);color:#1a0d08}
+.b:disabled{opacity:.38;cursor:not-allowed}
+.b[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+select.b{padding:3px 6px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--sensor);outline-offset:2px}
+.prog{display:flex;align-items:center;gap:8px;font:600 .78rem var(--f-display);font-variant-numeric:tabular-nums}
+.bar{flex:1;height:6px;border-radius:9px;background:var(--panel2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--mint);transition:width .4s}
+.tray{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.pc{display:flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:4px 5px;font:600 .68rem var(--f-display);cursor:pointer;min-width:0;color:var(--ink)}
+.pc span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc i{flex:none;width:8px;height:8px;border-radius:50%}
+.pc.on{background:#1f3d39;border-color:#2e6658}
+.pc.ok{border-color:var(--amber)}
+.pc.lock{opacity:.42}
+.pc.sel{outline:2px solid var(--coral);outline-offset:0}
+.t-sensor{background:var(--sensor)} .t-servo{background:var(--mint);border-radius:2px!important} .t-motor{background:var(--motor)} .t-body{background:var(--body)} .t-power{background:var(--amber)} .t-screen{background:var(--screen)}
+.sens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.sens div{background:var(--bg);border-radius:8px;padding:3px 7px;min-width:0}
+.sens span{display:block;font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.sens b{display:block;font:600 .78rem var(--f-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.jrow{display:grid;grid-template-columns:auto minmax(0,1fr) 3.2em;gap:8px;align-items:center}
+.jrow input[type=range]{width:100%;accent-color:var(--mint)}
+.jrow output{text-align:right;font:600 .78rem var(--f-display);font-variant-numeric:tabular-nums;color:var(--muted)}
+.poses{display:flex;gap:3px;flex-wrap:wrap}
+.pose{border:0;background:var(--panel2);border-radius:99px;min-width:22px;height:22px;padding:0 6px;font:600 .7rem var(--f-display);cursor:pointer;color:var(--ink)}
+.pose.on{background:var(--coral);color:#1a0d08}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+.seg button{border:0;background:var(--panel2);padding:4px 9px;font:600 .78rem var(--f-display);color:var(--muted);cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--amber);color:#1f1503}
+.blks{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.blk{border:1px solid #2e6658;background:#1f3d39;border-radius:8px;padding:5px 2px;font:600 .7rem var(--f-display);color:var(--ink);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.blk:disabled{opacity:.38;cursor:not-allowed}
+.blk.hit{background:var(--mint);color:#06281c}
+.b.rec{background:#c0392b;border-color:#c0392b;color:#fff;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.6}}
+.brd{width:100%;height:auto;display:block;max-height:178px}
+.brd .nd{cursor:pointer}
+.brd .nd rect{fill:var(--bg);stroke:var(--line);stroke-width:1.2}
+.brd .nd text{fill:var(--ink);font:600 9px var(--f-display);pointer-events:none}
+.brd .nd text.s{fill:var(--muted);font:400 7.5px var(--f-body)}
+.brd .nd.sel rect{stroke:var(--sensor);stroke-width:2}
+.brd .nd.act rect{fill:#3a2420;stroke:var(--coral);stroke-width:2}
+.brd .nd.alarm rect{fill:#5a1714;stroke:#ff5a4a;stroke-width:2}
+.brd .ed{fill:none;stroke-width:1.6;opacity:.55}
+.brd .ed.d{stroke:var(--mint)} .brd .ed.p{stroke:var(--amber)} .brd .ed.fb{stroke-dasharray:3 3}
+.brd .ed.act{opacity:1;stroke-width:2.6;stroke-dasharray:5 4;animation:flow .5s linear infinite}
+.brd .lb{fill:var(--muted);font:600 7px var(--f-body)}
+@keyframes flow{to{stroke-dashoffset:-9}}
+.loop{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:4px}
+.loop li{background:var(--bg);border-radius:8px;padding:4px 8px;border-left:3px solid var(--line)}
+.loop li.on{border-left-color:var(--coral);background:#2c1d1a}
+.loop li small{display:block;color:var(--muted);font-variant-numeric:tabular-nums}
+.aj{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+.aj div{display:grid;grid-template-columns:3.7em minmax(0,1fr) 2.6em;gap:4px;align-items:center;font-size:.7rem;min-height:17px}
+.aj label{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aj input[type=range]{width:100%;min-width:0;accent-color:var(--mint);height:14px;margin:0}
+.aj output{text-align:right;font:600 .7rem var(--f-display);font-variant-numeric:tabular-nums;color:var(--muted)}
+.aj .off{opacity:.35}
+.cele{position:absolute;left:50%;top:14%;transform:translateX(-50%);width:min(88%,380px);text-align:center;background:linear-gradient(135deg,rgba(255,122,92,.94),rgba(255,200,87,.94));color:#2a1208;border-radius:18px;padding:12px 14px;box-shadow:0 8px 30px rgba(0,0,0,.45);animation:celeIn .5s cubic-bezier(.2,1.4,.4,1);transition:opacity .5s;z-index:5;pointer-events:none}
+.cele b{display:block;font:700 1.25rem var(--f-display);line-height:1.15}.cele span{display:block;font-size:.9rem;margin-top:3px;font-weight:600}
+.cele.out{opacity:0}
+@keyframes celeIn{from{transform:translateX(-50%) scale(.6);opacity:0}}
+.stat{font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.stat b{color:var(--ink);font-weight:700}
+.missions{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.missions li{display:grid;grid-template-columns:18px 1fr;gap:6px}
+.missions .ck{width:16px;height:16px;border-radius:5px;border:2px solid var(--line);display:grid;place-items:center;font-size:.65rem;color:#06281c;margin-top:1px}
+.missions li.ok .ck{background:var(--mint);border-color:var(--mint)}
+.missions li.ok span{color:var(--muted);text-decoration:line-through}
+.qwrap{overflow-x:auto}
+.qt{border-collapse:separate;border-spacing:2px;font-size:.72rem;min-width:480px}
+.qt th{font-weight:600;color:var(--muted);text-align:center;padding:1px 3px}
+.qt th:first-child{text-align:left}
+.qt td{background:var(--bg);border-radius:5px;text-align:center;padding:2px 4px;font-variant-numeric:tabular-nums}
+.qt td:first-child{background:none;text-align:left;white-space:nowrap}
+.qt td.best{background:#1f5d49;color:#d9fff0;font-weight:700}
+.qt td.hl{outline:2px solid var(--coral);outline-offset:-1px;animation:pop .6s ease-out}
+.qt tr.cur td:first-child{font-weight:700;color:var(--coral)}
+#rlCurve{width:100%;height:auto;display:block;max-height:150px}
+.pts{font-family:var(--f-display);font-weight:700;font-size:1.4rem;line-height:1.1;animation:pop .6s ease-out}
+.pts.plus{color:var(--mint)} .pts.minus{color:var(--coral)} .pts.zero{color:var(--muted)}
+.pts small{font-family:var(--f-body);font-weight:400;font-size:.75rem;color:var(--muted);margin-left:6px}
+.val{font-weight:700;font-variant-numeric:tabular-nums}.up{color:var(--mint)}.down{color:var(--coral)}
+.sec{border-top:1px dashed var(--line);padding-top:5px;margin-top:5px}
+.exbtns{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.exbtns label{font-size:.75rem;color:var(--muted);display:inline-flex;gap:4px;align-items:center}
+.ex3{display:grid;gap:4px}
+.ex3 div{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:8px;background:var(--bg);border-radius:8px;padding:5px 8px}
+.ex3 b.n{font:700 1rem var(--f-display);text-align:center}
+@keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+.film{position:fixed;inset:0;background:rgba(5,9,16,.86);display:grid;place-items:center;padding:16px;z-index:20}
+.film div{width:min(860px,100%);display:grid;gap:8px}
+.film video{width:100%;border-radius:12px;background:#000}
+.film p{margin:0;color:var(--muted);font-size:.8rem}
+.film h2{margin:0;font:700 1.15rem var(--f-display)}
+.film h2 span{color:var(--coral)}
+@media (min-width:900px){
+  .app{grid-template-columns:minmax(0,1.5fr) minmax(360px,1fr);grid-template-rows:auto minmax(0,1fr) auto;padding-block:12px;gap:10px}
+  .top{grid-column:1 / -1}
+  .stage{grid-row:2 / 4}
+  .explain{grid-column:2;grid-row:2;max-height:none;height:auto}
+  .ctrl{grid-column:2;grid-row:3}
+  #rlCurve{max-height:320px}
+  body{font-size:15px}
+  .brand b{font-size:1.4rem}.brand small{font-size:.82rem}
+}
+@media (max-width:420px){.tray{grid-template-columns:repeat(5,minmax(0,1fr))}.tabs button{padding:4px 7px}.ib{padding:4px 7px}}
+@media (max-width:370px){.brand b{font-size:1rem}.tabs button{font-size:.74rem;padding:3px 6px}}
+@media (max-width:400px){.brand b{font-size:.95rem}.brand small{font-size:.62rem}.tabs button{font-size:.72rem;padding:3px 5px}.ib{padding:3px 6px;font-size:.72rem}.top{gap:5px}#bFilm{font-size:0;padding:3px 8px}#bFilm::before{content:'▶';font-size:.72rem}}
+@media (max-height:640px) and (max-width:899px){.explain{height:24vh}}
+@media (prefers-reduced-motion:reduce){.cele{animation:none}.tabs button.next,.pts,.qt td.hl,.b.rec,.brd .ed.act{animation:none}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><b>Nori-<span>Werkstatt</span></b><small>von Dr. Piczlewicz</small></div>
+    <nav class="tabs" role="tablist" aria-label="Schritte">
+      <button type="button" role="tab" id="tabBuild" aria-selected="true" aria-label="Schritt 1: Bauen"><b>1</b><span>Bauen</span></button>
+      <button type="button" role="tab" id="tabTest" aria-selected="false" aria-label="Schritt 2: Testen" disabled><b>2</b><span>Testen</span></button>
+      <button type="button" role="tab" id="tabBrain" aria-selected="false" aria-label="Schritt 3: Gehirn"><b>3</b><span>Gehirn</span></button>
+      <button type="button" role="tab" id="tabLearn" aria-selected="false" aria-label="Schritt 4: Belohnung" disabled><b>4</b><span>Belohnung</span></button>
+      <button type="button" role="tab" id="tabImit" aria-selected="false" aria-label="Schritt 5: Nachmachen" disabled><b>5</b><span>Nachmachen</span></button>
+      <button type="button" role="tab" id="tabPark" aria-selected="false" aria-label="Schritt 6: Parcours" disabled><b>6</b><span>Parcours</span></button>
+    </nav>
+    <button class="ib" id="bFilm" type="button" aria-label="Film ansehen">Film</button>
+  </header>
+
+  <div class="stage">
+    <canvas id="stage" aria-label="Nori in 3D. Zum Drehen ziehen, zum Zoomen mit zwei Fingern oder dem Mausrad."></canvas>
+    <div class="cele" id="cele" role="status" hidden><b>🎉 Toll, das hast du gemacht!</b><span>Gratuliere! Jetzt kannst du mich testen.</span></div>
+    <div class="bubble" id="bubble" aria-live="polite"><b>Werkstatt:</b> Tippe unten auf „Rumpf“, um anzufangen.</div>
+    <div class="tools">
+      <button class="pill" id="bBub" type="button" aria-pressed="true" aria-label="Sprechblase ein oder aus">💬</button>
+      <button class="pill" id="bExplode" type="button" aria-pressed="false">Explosion</button>
+      <button class="pill" id="bCom" type="button" aria-pressed="false">Schwerpunkt</button>
+      <button class="pill" id="bView" type="button">Ansicht</button>
+      <button class="pill warn" id="bUp" type="button" hidden>Nori aufstellen</button>
+    </div>
+  </div>
+
+  <section class="explain" aria-labelledby="exT">
+    <div class="exhead"><h2 id="exT">So geht’s</h2><div class="exmodes" id="exModes"></div></div>
+    <div class="exbody" id="exB" aria-live="polite"></div>
+  </section>
+
+  <section class="ctrl">
+    <div id="pBuild" class="row" style="display:grid;gap:6px">
+      <div class="prog"><span id="cnt">0/14 Teile</span><div class="bar"><i id="barI" style="width:0"></i></div></div>
+      <div class="tray" id="tray"></div>
+      <div class="row"><button class="b main" id="bAct" type="button">Einbauen</button><button class="b" id="bUndo" type="button">↶ Zurück</button><button class="b" id="bAll" type="button">Alle einbauen</button><button class="b" id="bReset" type="button">Zerlegen</button></div>
+    </div>
+
+    <div id="pTest" style="display:grid;gap:6px" hidden>
+      <div class="row"><button class="b main" id="bStand" type="button">Vom Ständer</button><button class="b" id="bHome" type="button">Grundstellung</button><button class="b" id="bClap" type="button">Klatschen</button></div>
+      <div class="sens">
+        <div><span>Lage</span><b id="sTilt">-</b></div><div><span>Fuß L / R</span><b id="sFeet">-</b></div><div><span>Mikrofon</span><b id="sMic">-</b></div>
+        <div><span>Kamera</span><b id="sCam">-</b></div><div><span>Greifer</span><b id="sGrip">-</b></div><div><span>Aufgaben</span><b id="sMis">0/10</b></div>
+      </div>
+      <div class="row" id="tHint"><button class="b main" id="bReveal" type="button">Regler zeigen</button><span class="stat">Erst lesen, dann alle Regler.</span></div>
+      <div id="tCtl" style="display:grid;gap:6px" hidden>
+      <div class="jrow" style="display:none"><select class="b" id="jSel" aria-label="Gelenk wählen"></select><input type="range" id="jRange" aria-label="Winkel"><output id="jOut" for="jRange">0°</output></div>
+      <div class="row"><span class="poses" id="poses"></span><button class="b" id="bSave" type="button">+ Pose</button><button class="b main" id="bPlay" type="button">▶ Abspielen</button><button class="b" id="bExample" type="button">Beispiel</button><button class="b" id="bClearP" type="button">Löschen</button></div>
+      </div>
+    </div>
+
+    <div id="pLearn" style="display:grid;gap:6px" hidden>
+      <div class="row"><span class="seg" role="group" aria-label="Lernart" hidden><button type="button" data-l="rl" aria-pressed="true">Belohnung</button><button type="button" data-l="im" aria-pressed="false">Nachmachen</button></span><span class="row" id="rlTasks"></span></div>
+      <div id="lRL" style="display:grid;gap:6px">
+      <div class="row"><select class="b" id="rlCount" aria-label="Anzahl Versuche"></select><button class="b main" id="bTrain" type="button">Üben</button><select class="b" id="rlSpeed" aria-label="Tempo, darunter Zeitlupe"></select></div>
+      <div class="row"><button class="b" id="bExplain" type="button">Schritt für Schritt</button><button class="b" id="bWatch" type="button">Ansehen</button><button class="b main" id="bDemo" type="button">Vorführen</button><button class="b" id="bForget" type="button">Vergessen</button></div>
+      <div class="stat" id="rlStat"></div>
+      </div>
+      <div id="lIM" style="display:grid;gap:6px" hidden>
+      <div class="blks" id="imBlocks" aria-label="Bewegungsbausteine zum Vormachen"></div>
+      <div class="row"><button class="b" id="bRec" type="button">● Vormachen</button><button class="b main" id="bImit" type="button">▶ Nachmachen</button><button class="b" id="bImRL" type="button">Als Vorwissen</button><button class="b" id="bImForget" type="button">Vergessen</button><select class="b" id="imSpeed" aria-label="Tempo"></select></div>
+      <div class="stat" id="imStat"></div>
+      </div>
+    </div>
+    <div id="pPark" style="display:grid;gap:6px" hidden>
+      <div class="sts" id="pkSt"></div>
+      <div class="row"><span class="seg" id="pkDrv" role="group" aria-label="Wer steuert Nori?"><button type="button" data-d="pose">Posen</button><button type="button" data-d="rl">Belohnung</button><button type="button" data-d="im">Nachmachen</button></span><button class="b main" id="bPark" type="button">▶ Start</button></div>
+      <div class="stat" id="pkStat"></div>
+    </div>
+    <div id="pBrain" style="display:grid;gap:6px" hidden>
+      <svg class="brd" id="brd" viewBox="0 0 340 158" role="group" aria-label="Schaltplan: Tippe auf ein Bauteil"></svg>
+      <div class="row"><button class="b main" id="bLoop" type="button">▶ Regelschleife</button><button class="b" id="bBrWalk" type="button">Laufen lassen</button><span class="stat" id="brStat"></span></div>
+    </div>
+  </section>
+</div>
+
+<div class="film" id="fdone" hidden>
+  <div>
+    <h2>🎉 Toll, das hast du gemacht!</h2>
+    <video id="doneV" src="nuki/nori-fertig.mp4" poster="nuki/nori-fertig-poster.jpg" controls playsinline preload="none"></video>
+    <p>Gratuliere! Nori ist zusammengebaut. Jetzt kannst du ihn testen.</p>
+    <button class="b main" id="bDoneX" type="button" style="justify-self:start">Weiter zum Testen</button>
+  </div>
+</div>
+
+<div class="film" id="flearn" hidden>
+  <div>
+    <h2>🧠 Nori hat selbst laufen gelernt!</h2>
+    <video id="learnV" src="nuki/nori-gelernt.mp4" poster="nuki/nori-gelernt-poster.jpg" controls playsinline preload="none"></video>
+    <p>Du hast ihm nichts erklärt, er hat es durch Belohnung selbst herausgefunden. Als Nächstes zeigst du ihm etwas vor: Nachmachen.</p>
+    <button class="b main" id="bLearnX" type="button" style="justify-self:start">Weiter zum Nachmachen</button>
+  </div>
+</div>
+
+<div class="film" id="film" hidden>
+  <div>
+    <h2>Willkommen in der Nori-<span>Werkstatt</span></h2>
+    <video id="filmV" src="nuki/nuki-zusammenbau.mp4" poster="nuki/nuki-poster.jpg" controls muted playsinline loop preload="none"></video>
+    <p>So setzt sich Nori zusammen und wacht auf. Jetzt bist du dran, in 6 Schritten: <b>1</b> Bauen, <b>2</b> Testen, <b>3</b> Gehirn, <b>4</b> Lernen mit Belohnung, <b>5</b> Nachmachen, <b>6</b> Parcours. Entwickelt von Dr. Piczlewicz.</p>
+    <button class="b main" id="bFilmX" type="button" style="justify-self:start">Los geht’s!</button>
+  </div>
+</div>
+
+<script src="lib/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var D2R=Math.PI/180;
+var store={get:function(k,d){try{var v=localStorage.getItem('nuki.'+k);return v?JSON.parse(v):d}catch(e){return d}},set:function(k,v){try{localStorage.setItem('nuki.'+k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- Teile ---------- */
+var TYPES={body:['Gehäuse','t-body'],power:['Strom','t-power'],sensor:['Sensor','t-sensor'],servo:['Servo','t-servo'],motor:['Motor','t-motor'],screen:['Anzeige','t-screen']};
+var PARTS=[
+ {id:'rumpf',name:'Rumpf mit Hauptplatine',type:'body',need:[],text:'Der Bauch von Nori. Innen steckt die Hauptplatine, sein Gehirn: ein kleiner Computer, der alle Sensoren liest und allen Servos sagt, was sie tun sollen.',say:'Der Rumpf steht auf dem Montageständer. Jetzt fehlen Strom, Beine, Arme und Kopf.'},
+ {id:'akku',name:'Akku-Rucksack',type:'power',need:['rumpf'],text:'Speichert den Strom. Ohne Akku bewegt sich kein Servo und kein Bildschirm leuchtet. Der Akku ist schwer und zieht den Schwerpunkt nach hinten. Schau es dir mit „Schwerpunkt zeigen“ an.',say:'Strom ist da! Ich wache gleich auf …'},
+ {id:'imu',name:'Lage-Sensor (IMU)',type:'sensor',need:['rumpf'],text:'Ein winziger Chip, der spürt, ob Nori gerade steht oder kippt. Er misst Beschleunigung und Drehung, so wie das Gleichgewichtsorgan in deinem Ohr.',say:'Ich spüre jetzt, wo oben und unten ist.'},
+ {id:'huefte',name:'Hüft-Servos (4)',type:'servo',need:['rumpf'],text:'Ein Servo ist ein Motor, der auf einen bestimmten Winkel fährt und dort stehen bleibt. Jede Hüfte hat zwei: einer schwenkt das Bein vor und zurück, einer kippt es zur Seite. So kann Nori sein Gewicht verlagern.',say:'Hüften sind drin. Ohne Beine wackelt aber noch nichts.'},
+ {id:'oberbein',name:'Oberschenkel mit Knie-Servos (2)',type:'servo',need:['huefte'],text:'Das Knie-Servo beugt das Bein. Mit gebeugtem Knie hebt Nori den Fuß vom Boden, mit gestrecktem Bein steht er groß und sicher.',say:'Knie! Jetzt kann ich die Beine beugen.'},
+ {id:'unterbein',name:'Unterschenkel mit Knöchel-Servos (4)',type:'servo',need:['oberbein'],text:'Die Knöchel halten den Fuß flach auf dem Boden, auch wenn das Bein schräg steht. Pro Fuß gibt es zwei: einer kippt vor und zurück, einer zur Seite.',say:'Fast fertig mit den Beinen. Nur die Füße fehlen.'},
+ {id:'fuesse',name:'Füße mit Kraftsensoren',type:'sensor',need:['unterbein'],text:'Unter jeder Sohle sitzt ein Kraftsensor. Er misst, wie viel Gewicht auf dem Fuß lastet. Steht Nori auf einem Bein, zeigt der andere Fuß null.',say:'Ich spüre den Boden unter den Füßen!'},
+ {id:'hals',name:'Hals-Servo',type:'servo',need:['rumpf'],text:'Dreht den Kopf nach links und rechts. So kann Nori sich umschauen, ohne den ganzen Körper zu drehen.',say:'Der Hals ist bereit für einen Kopf.'},
+ {id:'kopf',name:'Kopf mit Bildschirm',type:'screen',need:['hals'],text:'Auf dem Bildschirm zeigt Nori, wie es ihm geht. Ein Roboter fühlt nicht wie du, aber sein Gesicht verrät, was seine Sensoren gerade melden: Kippen macht ihn ängstlich, ein Klatschen weckt ihn auf.',say:'Hallo! Ich kann noch nichts sehen und nichts hören.'},
+ {id:'kamera',name:'Doppelkamera',type:'sensor',need:['kopf'],text:'Zwei Kameras nebeneinander, wie deine zwei Augen. Weil jede Kamera das Bild ein bisschen anders sieht, kann Nori ausrechnen, wie weit etwas entfernt ist.',say:'Oh, jetzt sehe ich etwas! Da liegt ein Baustein.'},
+ {id:'ohren',name:'Kopfhörer-Ohren mit Mikrofonen',type:'sensor',need:['kopf'],text:'In jedem Ohr steckt ein Mikrofon. Kommt ein Geräusch von links, hört das linke Mikrofon es ein kleines bisschen früher. So weiß Nori, wohin er schauen muss.',say:'Ich kann hören! Klatsch mal in die Hände.'},
+ {id:'schulter',name:'Schulter-Servos (2)',type:'servo',need:['rumpf'],text:'Heben die Arme nach vorn und nach oben. Arme helfen auch beim Balancieren, so wie bei dir auf einem Baumstamm.',say:'Schultern sind drin.'},
+ {id:'arme',name:'Arme mit Ellbogen-Servos (2)',type:'servo',need:['schulter'],text:'Die Ellbogen beugen die Unterarme. Zusammen mit der Schulter kann Nori seine Hand an viele Stellen bringen.',say:'Arme! Gleich kann ich winken.'},
+ {id:'greifer',name:'Greifhände mit Getriebemotor (2)',type:'motor',need:['arme'],text:'Hier arbeitet kein Servo, sondern ein kleiner Motor mit Zahnrädern. Er dreht so lange, bis die Finger etwas festhalten. Ein Kraftsensor in den Fingern merkt, wann er stoppen muss.',say:'Ich kann zupacken!'}
+];
+var P={};PARTS.forEach(function(p){P[p.id]=p;p.items=[];p.on=false});
+function on(id){return P[id].on}
+function legsReady(){return on('rumpf')&&on('akku')&&on('fuesse')}
+function awakeHW(){return on('akku')&&on('kopf')}
+
+/* ---------- Gelenke ---------- */
+var JOINTS=[
+ {k:'hipL',g:'Beine',n:'Hüfte links',min:-40,max:60,part:'huefte'},
+ {k:'hipR',g:'Beine',n:'Hüfte rechts',min:-40,max:60,part:'huefte'},
+ {k:'lean',g:'Beine',n:'Gewicht ← R | L →',min:-20,max:20,part:'huefte'},
+ {k:'kneeL',g:'Beine',n:'Knie links',min:0,max:100,part:'oberbein'},
+ {k:'kneeR',g:'Beine',n:'Knie rechts',min:0,max:100,part:'oberbein'},
+ {k:'ankL',g:'Beine',n:'Knöchel links',min:-30,max:30,part:'unterbein'},
+ {k:'ankR',g:'Beine',n:'Knöchel rechts',min:-30,max:30,part:'unterbein'},
+ {k:'head',g:'Kopf',n:'Kopf drehen',min:-70,max:70,part:'hals'},
+ {k:'shL',g:'Arme',n:'Schulter links',min:-30,max:180,part:'schulter'},
+ {k:'shR',g:'Arme',n:'Schulter rechts',min:-30,max:180,part:'schulter'},
+ {k:'elL',g:'Arme',n:'Ellbogen links',min:0,max:120,part:'arme'},
+ {k:'elR',g:'Arme',n:'Ellbogen rechts',min:0,max:120,part:'arme'},
+ {k:'grip',g:'Arme',n:'Greifer zu',min:0,max:100,part:'greifer',unit:'%'}
+];
+var tgt={},cur={};
+JOINTS.forEach(function(j){tgt[j.k]=0;cur[j.k]=0});
+
+/* ---------- Szene ---------- */
+var canvas=$('stage');
+var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+var scene=new THREE.Scene();
+var cam=new THREE.PerspectiveCamera(38,1,.1,200);
+scene.add(new THREE.HemisphereLight(0xdfe8ff,0x2a3a57,.75));
+var sun=new THREE.DirectionalLight(0xffffff,1.1);sun.position.set(4,8,6);sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024);var sc=sun.shadow.camera;sc.left=-4;sc.right=4;sc.top=4;sc.bottom=-4;sc.near=1;sc.far=30;sun.shadow.bias=-.0008;
+scene.add(sun);scene.add(sun.target);
+var fill=new THREE.DirectionalLight(0xdff3ff,.35);fill.position.set(-5,3,-2);scene.add(fill);
+
+function mat(c,o){o=o||{};return new THREE.MeshStandardMaterial({color:c,roughness:o.r!=null?o.r:.38,metalness:0,emissive:o.e||0x000000,emissiveIntensity:o.ei||1})}
+var M={white:mat(0xf4f3ef,{r:.3}),coral:mat(0xe85a42),mint:mat(0x74c9a2),mintD:mat(0x5db58e),orange:mat(0xf39a3a),dark:mat(0x26222e,{r:.25}),grey:mat(0xb9c0c4,{r:.5}),blue:mat(0x3d86ee,{e:0x2a6fe0,ei:.6}),stand:mat(0xa9b3b8,{r:.6})};
+var servoMats=[];
+function servoMat(){var m=mat(0x5fbf95);servoMats.push(m);return m}
+
+/* Boden mit 10-cm-Raster: 1 Einheit = 10 cm */
+(function(){
+  var c=document.createElement('canvas');c.width=c.height=128;var x=c.getContext('2d');
+  x.fillStyle='#2a3a57';x.fillRect(0,0,128,128);x.strokeStyle='rgba(190,210,255,.16)';x.lineWidth=2;x.strokeRect(0,0,128,128);
+  var t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(40,40);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;
+  var g=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({map:t,roughness:.95}));
+  g.rotation.x=-Math.PI/2;g.receiveShadow=true;scene.add(g);
+  function line(z,color,label){
+    var m=new THREE.Mesh(new THREE.BoxGeometry(3.2,.006,.05),new THREE.MeshBasicMaterial({color:color}));m.position.set(0,.004,z);scene.add(m);
+    var lc=document.createElement('canvas');lc.width=256;lc.height=64;var lx=lc.getContext('2d');lx.font='600 38px Fredoka, sans-serif';lx.fillStyle=color;lx.textAlign='center';lx.fillText(label,128,46);
+    var s=new THREE.Mesh(new THREE.PlaneGeometry(1,.25),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(lc),transparent:true}));s.rotation.x=-Math.PI/2;s.position.set(2.2,.006,z);scene.add(s);
+  }
+  line(0,'#4fd1a1','Start');line(3,'#ff7a5c','30 cm');line(6,'#ff7a5c','60 cm');line(9,'#ffc857','90 cm');
+})();
+
+/* Robotergerüst */
+var fallG=new THREE.Group();scene.add(fallG);
+var root=new THREE.Group();fallG.add(root);
+var pelvis=new THREE.Group();pelvis.position.y=.95;root.add(pelvis);
+var LEG=.95;
+
+function wrap(parent,part,off){var w=new THREE.Group();w.visible=false;parent.add(w);w.userData={off:off||new THREE.Vector3(),f:0,tf:0,s:1};P[part].items.push(w);return w}
+function mesh(g,m,parent,pos){var o=new THREE.Mesh(g,m);o.castShadow=true;o.receiveShadow=true;if(pos)o.position.copy(pos);parent.add(o);return o}
+var V=function(x,y,z){return new THREE.Vector3(x,y,z)};
+var sph=new THREE.SphereGeometry(1,36,24);
+
+/* Rumpf */
+var wR=wrap(pelvis,'rumpf');
+var torso=mesh(sph,M.white,wR,V(0,.42,0));torso.scale.set(.37,.43,.32);
+var hipCup=mesh(sph,M.white,wR,V(0,.08,0));hipCup.scale.set(.27,.14,.22);
+var belt=mesh(new THREE.TorusGeometry(1,.06,10,48),M.orange,wR,V(0,.36,0));belt.scale.set(.37,.315,.5);belt.rotation.x=Math.PI/2;
+/* Akku */
+var wA=wrap(pelvis,'akku',V(0,.05,-.5));
+var pack=mesh(new THREE.CapsuleGeometry(.15,.18,6,16),M.coral,wA,V(0,.48,-.33));pack.scale.set(1.35,1,.55);
+mesh(new THREE.CylinderGeometry(.03,.03,.08,12),M.grey,wA,V(.1,.74,-.33));
+/* IMU = blaue Brust-LED */
+var wI=wrap(pelvis,'imu',V(0,0,.35));
+var imuLed=mesh(new THREE.SphereGeometry(.035,16,12),M.blue,wI,V(0,.33,.315));
+
+/* Beine */
+var legs={};
+['L','R'].forEach(function(S){
+  var s=S==='L'?1:-1,L={};
+  L.roll=new THREE.Group();L.roll.position.set(s*.17,0,0);pelvis.add(L.roll);
+  L.pitch=new THREE.Group();L.roll.add(L.pitch);
+  var wh=wrap(L.pitch,'huefte',V(s*.18,-.05,0));L.sv1=mesh(new THREE.BoxGeometry(.17,.14,.19),servoMat(),wh);
+  var wt=wrap(L.pitch,'oberbein',V(s*.22,-.12,0));
+  L.thigh=mesh(new THREE.BoxGeometry(.17,.28,.19),M.mint,wt,V(0,-.22,0));
+  L.knee=new THREE.Group();L.knee.position.y=-.42;L.pitch.add(L.knee);
+  var kn=mesh(new THREE.CylinderGeometry(.075,.075,.19,20),servoMat(),wt,V(0,-.42,0));kn.rotation.z=Math.PI/2;L.sv2=kn;
+  var ws=wrap(L.knee,'unterbein',V(s*.26,-.22,0));
+  L.shin=mesh(new THREE.BoxGeometry(.16,.28,.18),M.mint,ws,V(0,-.21,0));
+  L.ank=new THREE.Group();L.ank.position.y=-.42;L.knee.add(L.ank);
+  var an=mesh(new THREE.CylinderGeometry(.065,.065,.17,20),servoMat(),ws,V(0,-.42,0));an.rotation.z=Math.PI/2;L.sv3=an;
+  L.ankRoll=new THREE.Group();L.ank.add(L.ankRoll);
+  var wf=wrap(L.ankRoll,'fuesse',V(s*.26,-.35,.12));
+  L.foot=mesh(new THREE.CapsuleGeometry(.115,.19,6,16),M.coral,wf,V(0,-.06,.07));L.foot.rotation.x=Math.PI/2;L.foot.scale.set(1.05,1,.45);
+  mesh(new THREE.BoxGeometry(.14,.012,.2),M.blue,wf,V(0,-.108,.07));
+  L.pt=new THREE.Object3D();L.pt.position.set(0,-.11,.07);L.ankRoll.add(L.pt);
+  legs[S]=L;
+});
+/* Hals und Kopf */
+var neck=new THREE.Group();neck.position.y=.84;pelvis.add(neck);
+var wN=wrap(neck,'hals',V(0,.18,0));var nsv=mesh(new THREE.CylinderGeometry(.085,.085,.1,20),servoMat(),wN);
+var head=new THREE.Group();head.position.y=.4;neck.add(head);
+var wK=wrap(head,'kopf',V(0,.4,0));
+var skull=mesh(sph,M.white,wK);skull.scale.set(.46,.42,.42);
+var faceC=document.createElement('canvas');faceC.width=320;faceC.height=200;var faceX=faceC.getContext('2d');
+var faceT=new THREE.CanvasTexture(faceC);faceT.encoding=THREE.sRGBEncoding;
+var screen=new THREE.Mesh(new THREE.SphereGeometry(1,40,20,Math.PI/2-.62,1.24,Math.PI/2-.42,.84),new THREE.MeshBasicMaterial({map:faceT}));
+screen.scale.set(.468,.428,.428);wK.add(screen);
+var wC=wrap(head,'kamera',V(0,.25,.3));
+var camBox=mesh(new THREE.CapsuleGeometry(.04,.12,4,12),M.white,wC,V(0,.3,.3));camBox.rotation.z=Math.PI/2;camBox.rotation.y=0;camBox.scale.set(1,1,.9);
+[-.05,.05].forEach(function(x){mesh(new THREE.SphereGeometry(.028,16,12),M.blue,wC,V(x,.3,.335))});
+var wO=wrap(head,'ohren',V(0,.32,0));
+var band=mesh(new THREE.TorusGeometry(.5,.035,10,40,Math.PI),M.coral,wO,V(0,.02,-.02));band.scale.set(1,1.02,1);
+[-1,1].forEach(function(s){
+  var pod=mesh(new THREE.CylinderGeometry(.15,.15,.1,28),M.coral,wO,V(s*.47,0,0));pod.rotation.z=Math.PI/2;
+  mesh(new THREE.SphereGeometry(.022,12,8),M.blue,wO,V(s*.525,-.05,.05));
+});
+var boom=mesh(new THREE.CapsuleGeometry(.014,.22,4,8),M.coral,wO,V(.44,-.17,.17));boom.rotation.set(.9,0,.5);
+mesh(new THREE.SphereGeometry(.035,12,10),M.dark,wO,V(.37,-.25,.27));
+
+/* Arme */
+var arms={};
+['L','R'].forEach(function(S){
+  var s=S==='L'?1:-1,A={};
+  A.sh=new THREE.Group();A.sh.position.set(s*.41,.6,0);pelvis.add(A.sh);
+  var wsh=wrap(A.sh,'schulter',V(s*.18,.05,0));A.sv1=mesh(new THREE.SphereGeometry(.09,20,14),servoMat(),wsh);
+  var wa=wrap(A.sh,'arme',V(s*.3,-.08,0));
+  mesh(new THREE.CapsuleGeometry(.062,.16,4,14),M.mint,wa,V(0,-.16,0));
+  mesh(new THREE.CylinderGeometry(.072,.072,.07,18),M.white,wa,V(0,-.22,0));
+  A.el=new THREE.Group();A.el.position.y=-.32;A.sh.add(A.el);
+  var es=mesh(new THREE.CylinderGeometry(.058,.058,.14,18),servoMat(),wa,V(0,-.32,0));es.rotation.z=Math.PI/2;A.sv2=es;
+  var wfa=wrap(A.el,'arme',V(s*.36,-.14,0));
+  mesh(new THREE.CapsuleGeometry(.056,.14,4,14),M.mint,wfa,V(0,-.13,0));
+  mesh(new THREE.CylinderGeometry(.066,.066,.07,18),M.white,wfa,V(0,-.2,0));
+  A.hand=new THREE.Group();A.hand.position.y=-.3;A.el.add(A.hand);
+  var wg=wrap(A.hand,'greifer',V(s*.4,-.22,0));
+  mesh(new THREE.SphereGeometry(.05,16,12),M.coral,wg);
+  A.f1=new THREE.Group();A.f1.position.set(.025,-.03,0);wg.add(A.f1);
+  A.f2=new THREE.Group();A.f2.position.set(-.025,-.03,0);wg.add(A.f2);
+  var fg=new THREE.TorusGeometry(.055,.018,8,16,Math.PI*.9);
+  var a1=mesh(fg,M.coral,A.f1,V(.0,-.055,0));a1.rotation.z=-Math.PI*.45-Math.PI/2+Math.PI;
+  var a2=mesh(fg,M.coral,A.f2,V(.0,-.055,0));a2.rotation.z=-Math.PI*.45-Math.PI/2;
+  A.tip=new THREE.Object3D();A.tip.position.y=-.1;A.hand.add(A.tip);
+  arms[S]=A;
+});
+/* Montageständer */
+var standG=new THREE.Group();scene.add(standG);
+mesh(new THREE.CylinderGeometry(.5,.55,.06,32),M.stand,standG,V(0,.03,0));
+var pole=mesh(new THREE.CylinderGeometry(.045,.045,1,16),M.stand,standG,V(0,.5,0));
+var STAND_Y=.42;
+/* Baustein auf Sockel */
+var blockG=new THREE.Group();scene.add(blockG);
+var block=new THREE.Group();
+mesh(new THREE.BoxGeometry(.16,.1,.1),mat(0x3d7ff0),block);
+var bTop=mesh(new THREE.BoxGeometry(.08,.1,.1),mat(0xf5c638),block,V(.04,.1,0));
+[[-.04,.055],[.04,.055]].forEach(function(p){mesh(new THREE.CylinderGeometry(.022,.022,.03,12),mat(0x3d7ff0),block,V(p[0],p[1],0))});
+var ped=mesh(new THREE.CylinderGeometry(.07,.11,1,20),mat(0xc9d3d6,{r:.6}),blockG);
+var BLOCK_HOME=V(-.6,1,.85);
+var held=null,blockVy=0;
+
+/* Schwerpunkt-Anzeige */
+var comDot=new THREE.Mesh(new THREE.CircleGeometry(.05,24),new THREE.MeshBasicMaterial({color:0xe8634c}));comDot.rotation.x=-Math.PI/2;comDot.visible=false;scene.add(comDot);
+var supGeo=new THREE.BufferGeometry();supGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(15),3));
+var supLine=new THREE.Line(supGeo,new THREE.LineBasicMaterial({color:0x3aa57a}));supLine.visible=false;scene.add(supLine);
+var comPole=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,1,6),new THREE.MeshBasicMaterial({color:0xe8634c,transparent:true,opacity:.5}));comPole.visible=false;scene.add(comPole);
+
+/* Massen in kg (gerundet) */
+var MASS=[[torso,'rumpf',2.2],[pack,'akku',1.0],[skull,'kopf',1.3]];
+['L','R'].forEach(function(S){var L=legs[S],A=arms[S];MASS.push([L.sv1,'huefte',.25],[L.thigh,'oberbein',.45],[L.shin,'unterbein',.4],[L.foot,'fuesse',.3],[A.sv1,'schulter',.1],[A.el,'arme',.3],[A.hand,'greifer',.12])});
+
+/* ---------- Gesicht (LED-Punktmatrix) ---------- */
+var GW=40,GH=25,grid=new Uint8Array(GW*GH),faceKey='';
+function px(x,y){x=Math.round(x);y=Math.round(y);if(x>=0&&y>=0&&x<GW&&y<GH)grid[y*GW+x]=1}
+function ell(cx,cy,rx,ry){for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){var dx=(x-cx)/rx,dy=(y-cy)/ry;if(dx*dx+dy*dy<=1)grid[y*GW+x]=1}}
+function ring(cx,cy,r,t,top){for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){var d=Math.hypot(x-cx,y-cy);if(d<=r&&d>=r-t&&(top==null||(top?y<=cy:y>=cy)))grid[y*GW+x]=1}}
+function ln(x0,y0,x1,y1){var n=Math.max(Math.abs(x1-x0),Math.abs(y1-y0))*2+1;for(var i=0;i<=n;i++)px(x0+(x1-x0)*i/n,y0+(y1-y0)*i/n)}
+function drawFace(expr,look,blink){
+  var key=expr+'|'+look+'|'+blink;if(key===faceKey)return;faceKey=key;grid.fill(0);
+  var lx=13+look,rx=27+look,ey=11;
+  if(expr==='off'){}
+  else if(expr==='happy'){ring(lx,ey+2,4.6,1.6,true);ring(rx,ey+2,4.6,1.6,true)}
+  else if(expr==='proud'){ring(lx,ey+2,4.6,1.6,true);ring(rx,ey+2,4.6,1.6,true);ring(20,15,3.4,1.3,false)}
+  else if(expr==='surprised'){ring(lx,ey,4.2,1.5);ring(rx,ey,4.2,1.5);ring(20,20,2,1.2)}
+  else if(expr==='scared'){ell(lx,ey,2,2.6);ell(rx,ey,2,2.6);ln(14,21,17,19);ln(17,19,20,21);ln(20,21,23,19);ln(23,19,26,21)}
+  else if(expr==='dizzy'){[lx,rx].forEach(function(c){ln(c-3,ey-3,c+3,ey+3);ln(c-3,ey+3,c+3,ey-3)});ln(16,20,24,20)}
+  else if(expr==='sleepy'){ln(lx-4,ey+1,lx+4,ey+1);ln(rx-4,ey+1,rx+4,ey+1);ln(33,2,36,2);ln(36,2,33,5);ln(33,5,36,5)}
+  else if(expr==='focused'){ln(lx-4,ey,lx+4,ey);ln(lx-4,ey+1,lx+4,ey+1);ln(rx-4,ey,rx+4,ey);ln(rx-4,ey+1,rx+4,ey+1);ln(18,19,22,19)}
+  else if(expr==='worried'){ell(lx,ey+1,2.4,3);ell(rx,ey+1,2.4,3);ln(lx-3,ey-5,lx+3,ey-3);ln(rx+3,ey-5,rx-3,ey-3)}
+  else {var ry=blink?.6:3.6;ell(lx,ey,2.6,ry);ell(rx,ey,2.6,ry)}
+  var c=faceX,cw=faceC.width/GW,ch=faceC.height/GH;
+  c.fillStyle='#120e1a';c.fillRect(0,0,faceC.width,faceC.height);
+  for(var y=0;y<GH;y++)for(var x=0;x<GW;x++){
+    var lit=grid[y*GW+x];c.beginPath();c.arc((x+.5)*cw,(y+.5)*ch,cw*(lit?.42:.28),0,7);
+    if(lit){c.fillStyle='#ffc35a';c.shadowColor='#ff9d2e';c.shadowBlur=8}else{c.fillStyle='#211a2a';c.shadowBlur=0}
+    c.fill();
+  }
+  c.shadowBlur=0;faceT.needsUpdate=true;
+}
+
+/* ---------- Zustand ---------- */
+var S={onStand:true,state:'ok',stance:null,anchor:new THREE.Vector3(),fallA:0,fallV:0,fallAxis:'z',fallSign:1,
+  asleep:true,mic:0,happyT:0,startZ:0,leftStandT:0,oneLegT:0,playing:false,pIdx:0,pT:0,pFrom:null,explode:false,showCom:false,tilt:0,
+  com:new THREE.Vector3(),fl:0,fr:0,camTxt:'-',seen:0};
+var poses=store.get('poses',[]);
+var done=store.get('missions',{});
+var MISSIONS=[
+ {id:'wake',t:'Wecke Nori mit einem Klatschen. Dafür braucht er Ohren.'},
+ {id:'stand',t:'Nimm Nori vom Ständer, ohne dass er umfällt.'},
+ {id:'wave',t:'Lass Nori winken: Schulter über 150°.'},
+ {id:'oneleg',t:'Stell Nori 2 Sekunden auf ein Bein. Tipp: erst das Gewicht verlagern.'},
+ {id:'grab',t:'Heb den Baustein mit einer Greifhand auf.'},
+ {id:'fall',t:'Lass Nori absichtlich umfallen und lies den Lage-Sensor ab.'},
+ {id:'walk',t:'Lass Nori 30 cm weit laufen. Starte mit dem Beispiel und verbessere es.'},
+ {id:'rlwalk',t:'Lass Nori das Laufen selbst lernen, bis er beim Vorführen 30 cm schafft.'},
+ {id:'rlone',t:'Bring Nori mit Belohnung bei, auf einem Bein zu stehen.'},
+ {id:'imit',t:'Mach Nori das Laufen vor, bis er es beim Nachmachen 30 cm weit schafft.'},
+ {id:'park',t:'Schaff die ersten vier Stationen im Parcours.'},
+ {id:'dance',t:'Lass Nori tanzen: 8 Taktschläge, ohne umzufallen.'},
+ {id:'ball',t:'Schieß mit Nori ein Tor.'}
+];
+
+/* ---------- Kinematik und Gleichgewicht ---------- */
+var tmp=new THREE.Vector3(),tmp2=new THREE.Vector3(),q=new THREE.Quaternion();
+function applyJoints(){
+  ['L','R'].forEach(function(K){
+    var L=legs[K],A=arms[K],h=cur['hip'+K]*D2R,k=cur['knee'+K]*D2R,a=cur['ank'+K]*D2R,ln=cur.lean*D2R;
+    L.roll.rotation.z=-ln;L.pitch.rotation.x=-h;L.knee.rotation.x=k;L.ank.rotation.x=h-k+a;L.ankRoll.rotation.z=ln;
+    var s=cur['sh'+K]*D2R,e=cur['el'+K]*D2R;A.sh.rotation.x=-s;A.el.rotation.x=-e;
+    var g=(1-cur.grip/100)*.55+.04;A.f1.rotation.z=-g;A.f2.rotation.z=g;
+  });
+  head.rotation.y=cur.head*D2R;
+}
+function footW(K,out){return legs[K].pt.getWorldPosition(out)}
+function computeCom(out){
+  var m=0;out.set(0,0,0);
+  MASS.forEach(function(e){if(!on(e[1]))return;e[0].getWorldPosition(tmp);out.addScaledVector(tmp,e[2]);m+=e[2]});
+  if(held){block.getWorldPosition(tmp);out.addScaledVector(tmp,.1);m+=.1}
+  if(m>0)out.multiplyScalar(1/m);return m;
+}
+var FX=.12,FZ=.2;
+function support(){
+  var pts=[];['L','R'].forEach(function(K){if(K==='L'?S.gL:S.gR){footW(K,tmp);pts.push([tmp.x,tmp.z])}});
+  var x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;pts.forEach(function(p){x0=Math.min(x0,p[0]-FX);x1=Math.max(x1,p[0]+FX);z0=Math.min(z0,p[1]-FZ);z1=Math.max(z1,p[1]+FZ)});
+  return {x0:x0,x1:x1,z0:z0,z1:z1};
+}
+function physics(dt){
+  var vis=on('rumpf');standG.visible=vis&&S.onStand;
+  if(S.onStand){
+    fallG.position.set(0,0,0);fallG.rotation.set(0,0,0);root.position.set(0,STAND_Y,0);
+    scene.updateMatrixWorld(true);
+    pole.scale.y=STAND_Y+.95-.06;pole.position.y=pole.scale.y/2;
+    S.gL=S.gR=false;computeCom(S.com);S.fl=S.fr=0;S.tilt=0;return;
+  }
+  if(S.state==='ok'){
+    root.position.y=0;fallG.updateMatrixWorld(true);
+    var yl=footW('L',tmp).y,yr=footW('R',tmp2).y,mn=Math.min(yl,yr);
+    root.position.y-=mn;var EPS=.025;
+    S.gL=yl-mn<EPS;S.gR=yr-mn<EPS;
+    var st;
+    if(S.gL&&S.gR){var xl=footW('L',tmp).x,xr=footW('R',tmp2).x,mid=(xl+xr)/2,off=S.com.x-mid;st=(S.stance&&Math.abs(off)<.05)?S.stance:(off>0?'L':'R')}
+    else st=S.gL?'L':'R';
+    fallG.updateMatrixWorld(true);
+    if(st!==S.stance){S.stance=st;footW(st,S.anchor)}
+    else{footW(st,tmp);root.position.x+=S.anchor.x-tmp.x;root.position.z+=S.anchor.z-tmp.z;fallG.updateMatrixWorld(true)}
+    computeCom(S.com);
+    var sp=support(),c=S.com,dx=0,dz=0;
+    if(c.x<sp.x0)dx=c.x-sp.x0;else if(c.x>sp.x1)dx=c.x-sp.x1;
+    if(c.z<sp.z0)dz=c.z-sp.z0;else if(c.z>sp.z1)dz=c.z-sp.z1;
+    S.margin=Math.min(c.x-sp.x0,sp.x1-c.x,c.z-sp.z0,sp.z1-c.z);
+    if(dx||dz){
+      var piv=new THREE.Vector3();
+      if(Math.abs(dx)>=Math.abs(dz)){S.fallAxis='z';S.fallSign=dx>0?-1:1;piv.set(dx>0?sp.x1:sp.x0,0,Math.max(sp.z0,Math.min(sp.z1,c.z)))}
+      else{S.fallAxis='x';S.fallSign=dz>0?1:-1;piv.set(Math.max(sp.x0,Math.min(sp.x1,c.x)),0,dz>0?sp.z1:sp.z0)}
+      fallG.position.copy(piv);root.position.sub(piv);S.state='falling';S.fallA=0;S.fallV=.4;
+      if(!S.sim){S.playing=false;updPlay();say('Hilfe, ich kippe!')}
+    }
+    var tot=S.gL&&S.gR?1:0;
+    if(S.gL&&S.gR){footW('L',tmp);footW('R',tmp2);var span=tmp.x-tmp2.x||1e-6,w=Math.max(0,Math.min(1,(c.x-tmp2.x)/span));S.fl=w;S.fr=1-w}
+    else{S.fl=S.gL?1:0;S.fr=S.gR?1:0}
+    S.tilt=0;
+  }else if(S.state==='falling'){
+    S.fallV+=dt*9*Math.sin(Math.max(.05,S.fallA)+.1);S.fallA+=S.fallV*dt;
+    if(S.fallA>=1.42){S.fallA=1.42;S.state='fallen';$('bUp').hidden=false;say(on('imu')?'Aua. Mein Lage-Sensor meldet: Ich liege auf der Seite.':'Aua. Ohne Lage-Sensor merke ich nicht mal, dass ich liege.');if(on('imu'))mission('fall')}
+    S.fl=S.fr=0;S.tilt=S.fallA/D2R;
+  }
+  if(S.state!=='ok'){fallG.rotation.set(0,0,0);fallG.rotation[S.fallAxis]=S.fallSign*S.fallA;scene.updateMatrixWorld(true);computeCom(S.com)}
+}
+function standUp(){
+  root.position.add(fallG.position);root.position.y=0;fallG.position.set(0,0,0);fallG.rotation.set(0,0,0);
+  S.state='ok';S.stance=null;S.fallA=0;$('bUp').hidden=true;S.playing=false;updPlay();home();for(var k in cur)cur[k]=0;say('Danke! Wieder auf den Beinen.');
+}
+
+/* ---------- Servos, Abspielen ---------- */
+function stepServos(dt){
+  var sp=260*dt;JOINTS.forEach(function(j){
+    if(!on(j.part)){tgt[j.k]=0}
+    var d=tgt[j.k]-cur[j.k];cur[j.k]+=Math.max(-sp,Math.min(sp,d));
+  });
+}
+var DUR=.55;
+function stepPlay(dt){
+  if(!S.playing||!poses.length)return;
+  S.pT+=dt;var t=Math.min(1,S.pT/DUR),e=t*t*(3-2*t),to=poses[S.pIdx];
+  JOINTS.forEach(function(j){if(to[j.k]!=null)tgt[j.k]=S.pFrom[j.k]+(to[j.k]-S.pFrom[j.k])*e});
+  syncSliders();
+  if(t>=1){S.pFrom=Object.assign({},tgt);S.pIdx=(S.pIdx+1)%poses.length;S.pT=0;renderPoses()}
+}
+function home(){JOINTS.forEach(function(j){tgt[j.k]=0});syncSliders()}
+
+/* ---------- Wrapper-Animation (Einbau, Explosion) ---------- */
+function stepWraps(dt){
+  PARTS.forEach(function(p){p.items.forEach(function(w){
+    var u=w.userData;u.tf=p.on?(S.explode?2.2:0):5;
+    u.f+=(u.tf-u.f)*Math.min(1,dt*6);
+    w.visible=p.on||u.f<4.6;
+    w.position.copy(u.off).multiplyScalar(u.f);
+    var sc=p.on?1-Math.min(.4,u.f*.06):.6;w.scale.setScalar(sc);
+  })});
+}
+
+/* ---------- Sensoren, Gesicht, Aufgaben ---------- */
+var msgT=0;
+function sensors(dt){
+  S.mic=Math.max(0,S.mic-dt*1.4);
+  if(on('kopf')&&on('kamera')&&awakeHW()){
+    var hw=head.getWorldPosition(tmp).clone(),bw=block.getWorldPosition(tmp2).clone(),dir=bw.clone().sub(hw);
+    head.getWorldQuaternion(q);var fwd=V(0,0,1).applyQuaternion(q);var ang=Math.acos(Math.max(-1,Math.min(1,fwd.dot(dir.clone().normalize()))));
+    if(ang<.75&&!held){S.camTxt='Baustein, '+Math.round(dir.length()*10)+' cm';var side=fwd.clone().cross(dir).y;S.seen=side>0?-2:2}else{S.camTxt=held?'Baustein in der Hand':'nichts Besonderes';S.seen=0}
+  }else S.camTxt=on('kamera')?'aus':'-';
+  /* Greifen */
+  if(on('greifer')){
+    if(!held&&cur.grip>70){['L','R'].forEach(function(K){if(held)return;arms[K].tip.getWorldPosition(tmp);if(tmp.distanceTo(block.getWorldPosition(tmp2))<.16){held=K;arms[K].tip.attach(block);block.position.set(0,-.02,0);block.rotation.set(0,0,0);mission('grab');say('Hab ihn! Mein Kraftsensor spürt den Baustein.')}})}
+    if(held&&cur.grip<40){scene.attach(block);held=null;blockVy=0}
+  }
+  if(!held&&block.parent===scene){var floor=onPed(block.position)?BLOCK_HOME.y:.05;if(block.position.y>floor+.001){blockVy-=dt*9;block.position.y=Math.max(floor,block.position.y+blockVy*dt)}else{blockVy=0;block.rotation.set(0,block.rotation.y,0)}}
+  /* Aufgaben */
+  if(!S.onStand&&S.state==='ok'){
+    S.leftStandT+=dt;if(S.leftStandT>3)mission('stand');
+    if(S.gL!==S.gR){S.oneLegT+=dt;if(S.oneLegT>2)mission('oneleg')}else S.oneLegT=0;
+    if((root.position.z-S.startZ)>3)mission('walk');
+  }
+  if(on('arme')&&(cur.shL>150||cur.shR>150))mission('wave');
+}
+function onPed(p){return Math.hypot(p.x-BLOCK_HOME.x,p.z-BLOCK_HOME.z)<.2}
+var blinkT=0,shakeT=0;
+function face(dt){
+  if(!on('kopf'))return;
+  var e;
+  if(!awakeHW())e='off';
+  else if(S.state==='falling')e='scared';
+  else if(S.state==='fallen')e='dizzy';
+  else if(S.asleep)e='sleepy';
+  else if(S.happyT>0){S.happyT-=dt;e='happy'}
+  else if(held)e='proud';
+  else if(S.mic>.6)e='surprised';
+  else if(!S.onStand&&S.margin!=null&&S.margin<.035)e='worried';
+  else if(!S.onStand&&S.gL!==S.gR)e='focused';
+  else e='neutral';
+  blinkT-=dt;var bl=false;if(blinkT<0){if(blinkT<-.12)blinkT=2.5+Math.random()*3;else bl=true}
+  drawFace(e,S.seen,bl);
+}
+/* ---------- Schwerpunkt-Anzeige ---------- */
+function updCom(){
+  var v=S.showCom&&on('rumpf');comDot.visible=comPole.visible=v;supLine.visible=v&&!S.onStand&&S.state==='ok';
+  if(!v)return;comDot.position.set(S.com.x,.008,S.com.z);comPole.position.set(S.com.x,S.com.y/2,S.com.z);comPole.scale.y=Math.max(.01,S.com.y);
+  if(supLine.visible){var sp=support(),a=supGeo.attributes.position.array,c=[[sp.x0,sp.z0],[sp.x1,sp.z0],[sp.x1,sp.z1],[sp.x0,sp.z1],[sp.x0,sp.z0]];c.forEach(function(p,i){a[i*3]=p[0];a[i*3+1]=.01;a[i*3+2]=p[1]});supGeo.attributes.position.needsUpdate=true}
+}
+
+/* ---------- Kamera ---------- */
+var view={yaw:.55,pitch:.2,dist:5.4,tx:0,tz:0};
+function resetView(){view.yaw=.55;view.pitch=.2;view.dist=innerWidth<600?6.4:5.4}
+resetView();
+function updCam(dt){
+  var rp=root.getWorldPosition(tmp);view.tx+=(rp.x-view.tx)*Math.min(1,dt*3);view.tz+=(rp.z-view.tz)*Math.min(1,dt*3);
+  var ty=1.15;cam.position.set(view.tx+Math.sin(view.yaw)*Math.cos(view.pitch)*view.dist,ty+Math.sin(view.pitch)*view.dist,view.tz+Math.cos(view.yaw)*Math.cos(view.pitch)*view.dist);
+  cam.lookAt(view.tx,ty,view.tz);sun.position.set(view.tx+4,8,view.tz+6);sun.target.position.set(view.tx,0,view.tz);
+}
+var ptrs=new Map(),pinch0=0;
+canvas.addEventListener('pointerdown',function(e){canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,[e.clientX,e.clientY]);if(ptrs.size===2){var a=[...ptrs.values()];pinch0=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1])}});
+canvas.addEventListener('pointermove',function(e){if(!ptrs.has(e.pointerId))return;var p=ptrs.get(e.pointerId);
+  if(ptrs.size===1){view.yaw-=(e.clientX-p[0])*.008;view.pitch=Math.max(-.1,Math.min(1.2,view.pitch+(e.clientY-p[1])*.006))}
+  ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptrs.size===2){var a=[...ptrs.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(pinch0){view.dist=Math.max(2.5,Math.min(12,view.dist*pinch0/d))}pinch0=d}});
+['pointerup','pointercancel'].forEach(function(n){canvas.addEventListener(n,function(e){ptrs.delete(e.pointerId);pinch0=0})});
+canvas.addEventListener('wheel',function(e){e.preventDefault();view.dist=Math.max(2.5,Math.min(12,view.dist*(1+Math.sign(e.deltaY)*.1)))},{passive:false});
+function resetBlock(){if(held){scene.attach(block);held=null}block.position.set(BLOCK_HOME.x,BLOCK_HOME.y,BLOCK_HOME.z);block.rotation.set(0,.4,0)}
+
+/* Sockelhöhe so wählen, dass die rechte Hand (Schulter 90°, Ellbogen 20°) hinreicht */
+(function(){
+  scene.add(block);
+  cur.shR=80;cur.elR=10;cur.grip=0;applyJoints();root.position.set(0,0,0);scene.updateMatrixWorld(true);
+  arms.R.tip.getWorldPosition(BLOCK_HOME);BLOCK_HOME.y-=.03;
+  cur.shR=0;cur.elR=0;applyJoints();
+  ped.position.set(BLOCK_HOME.x,(BLOCK_HOME.y-.05)/2,BLOCK_HOME.z);ped.scale.y=BLOCK_HOME.y-.05;BLOCK_HOME.y+=0;
+  resetBlock();
+})();
+/* ---------- Lernen mit Belohnung (Q-Learning) ---------- */
+var ACTS=[
+ {s:'Gewicht L',n:'Gewicht nach links',f:function(t){t.lean=10}},
+ {s:'Gewicht R',n:'Gewicht nach rechts',f:function(t){t.lean=-10}},
+ {s:'L vor',n:'linkes Bein vorschwingen',f:function(t){t.kneeL=45;t.hipL=22;t.kneeR=0;t.hipR=0}},
+ {s:'R vor',n:'rechtes Bein vorschwingen',f:function(t){t.kneeR=45;t.hipR=22;t.kneeL=0;t.hipL=0}},
+ {s:'Absetzen',n:'Bein absetzen und Körper vorschieben',f:function(t){t.kneeL=t.kneeR=0;if(t.hipL>t.hipR+5){t.hipL=20;t.hipR=-20}else if(t.hipR>t.hipL+5){t.hipR=20;t.hipL=-20}}},
+ {s:'Gerade',n:'gerade hinstellen',f:function(t){t.lean=0;t.hipL=t.hipR=0;t.kneeL=t.kneeR=0}}
+];
+var NS=27,NA=ACTS.length,ALPHA=.3,GAMMA=.9,MAXT=30,TAKT=.4;
+var LEAN=['links','Mitte','rechts'],SIDE=['links','rechts','–'];
+function rlState(){var a=tgt.lean>3?0:tgt.lean<-3?2:1,b=tgt.hipL>tgt.hipR+5?0:tgt.hipR>tgt.hipL+5?1:2,c=tgt.kneeL>20?0:tgt.kneeR>20?1:2;return a*9+b*3+c}
+function stateTxt(s){return 'Gewicht '+LEAN[Math.floor(s/9)]+', vorn '+SIDE[Math.floor(s/3)%3]+', gehoben '+SIDE[s%3]}
+var RLT={
+ walk:{n:'Laufen',w:{fwd:1,alive:0,one:0,fall:20}},
+ one:{n:'Ein Bein',w:{fwd:0,alive:0,one:1,fall:20}},
+ stand:{n:'Nicht fallen',w:{fwd:0,alive:.5,one:0,fall:20}}
+};
+var WSL=[{k:'fwd',n:'Pro cm vorwärts',min:0,max:3,st:.5},{k:'alive',n:'Pro Takt stehen',min:0,max:2,st:.5},{k:'one',n:'Pro Takt auf 1 Bein',min:0,max:2,st:.5},{k:'fall',n:'Strafe Umfallen',min:0,max:40,st:5}];
+var RL=store.get('rl',null);if(!RL||!RLT[RL.task])RL={task:'walk',w:{},eps:.2};
+Object.keys(RLT).forEach(function(k){if(!RL.w[k])RL.w[k]=Object.assign({},RLT[k].w)});
+var QT=store.get('q',{}),HI=store.get('hist',{});
+function Qs(){var k=RL.task;if(!QT[k]||QT[k].length!==NS){QT[k]=[];for(var i=0;i<NS;i++)QT[k].push([0,0,0,0,0,0])}return QT[k]}
+function Hs(){var k=RL.task;var h=HI[k]||(HI[k]={ret:[],dist:[],fell:[],n:0,best:null});if(!h.test)h.test=[];return h}
+function W(){return RL.w[RL.task]}
+function reward(dz,fell,one){var w=W();return w.fwd*dz+(fell?-w.fall:w.alive+(one?w.one:0))}
+function chooseX(s,eps){var q=Qs()[s];if(Math.random()<eps)return {a:Math.floor(Math.random()*NA),rnd:true};return {a:choose(s,0),rnd:false}}
+function choose(s,eps){var q=Qs()[s];if(Math.random()<eps)return Math.floor(Math.random()*NA);var m=Math.max.apply(null,q),c=[];q.forEach(function(v,i){if(v===m)c.push(i)});return c[Math.floor(Math.random()*c.length)]}
+function learn(s,a,r,s2,term){var q=Qs(),t=r+(term?0:GAMMA*Math.max.apply(null,q[s2]));q[s][a]+=ALPHA*(t-q[s][a])}
+function rootZ(){return root.getWorldPosition(tmp).z}
+function epReset(){
+  if(held){scene.attach(block);held=null}resetBlock();
+  JOINTS.forEach(function(j){tgt[j.k]=cur[j.k]=0});
+  fallG.position.set(0,0,0);fallG.rotation.set(0,0,0);root.position.set(0,0,0);
+  S.onStand=false;S.state='ok';S.stance=null;S.fallA=0;S.playing=false;$('bUp').hidden=true;S.startZ=0;S.leftStandT=0;
+}
+function simEpisode(eps,noLearn){if(eps==null)eps=RL.eps;
+  epReset();S.sim=true;var ret=0,z0=rootZ(),fell=false,one=0;
+  for(var t=0;t<MAXT;t++){
+    var s=rlState(),a=choose(s,eps),zb=rootZ();ACTS[a].f(tgt);
+    for(var i=0;i<6;i++){stepServos(.07);applyJoints();physics(.07);if(S.state!=='ok'){fell=true;break}}
+    var o=!fell&&S.gL!==S.gR,r=reward((rootZ()-zb)*10,fell,o);ret+=r;if(o)one++;
+    if(!noLearn)learn(s,a,r,rlState(),fell);if(fell)break;
+  }
+  S.sim=false;return {ret:ret,dist:(rootZ()-z0)*10,fell:fell,one:one};
+}
+function record(res){
+  var h=Hs();h.n++;h.ret.push(Math.round(res.ret*10)/10);h.dist.push(Math.round(res.dist));h.fell.push(res.fell?1:0);
+  if(h.ret.length>300){h.ret.shift();h.dist.shift();h.fell.shift()}
+  if(h.best==null||res.dist>h.best)h.best=Math.round(res.dist);
+  if(h.n%10===0){var t=simEpisode(0,true);h.test.push({n:h.n,ret:Math.round(t.ret*10)/10,dist:Math.round(t.dist),fell:t.fell});if(h.test.length>60)h.test.shift()}
+}
+function saveRL(){store.set('rl',RL);store.set('q',QT);store.set('hist',HI)}
+
+/* ---------- Sprechblase und Erklärfenster ---------- */
+var bubT=null;
+function say(t){var b=$('bubble'),who=awakeHW()&&!S.asleep?'Nori':'Werkstatt';b.innerHTML='<b>'+who+':</b> '+t;b.title=t;b.classList.remove('fade');clearTimeout(bubT);bubT=setTimeout(function(){b.classList.add('fade')},4500)}
+var BUB=store.get('bub',1);
+function updBub(){$('bBub').setAttribute('aria-pressed',!!BUB);$('bubble').classList.toggle('off',!BUB)}
+$('bBub').addEventListener('click',function(){BUB=BUB?0:1;store.set('bub',BUB);updBub()});
+$('bubble').addEventListener('click',function(){this.classList.add('fade')});
+updBub();
+var tab='build',step='build',mode='help';
+var STEPN={build:1,test:2,brain:3,learn:4,imit:5,park:6},STEPL={build:'Bauen',test:'Testen',brain:'Gehirn',learn:'Lernen mit Belohnung',imit:'Nachmachen',park:'Parcours'};
+var MODES={
+  build:[['help','So geht’s'],['part','Teil']],
+  test:[['help','So geht’s'],['regler','Alle Regler'],['missions','Aufgaben']],
+  learn:[['help','So geht’s'],['story','Genau erklärt'],['points','Punkte'],['curve','Kurve'],['table','Tabelle'],['reward','Belohnung']],
+  im:[['help','So geht’s'],['demo','Vormach-Tabelle'],['cmp','Vergleich']],
+  park:[['help','So geht’s'],['station','Station'],['score','Ergebnis']],
+  brain:[['help','So geht’s'],['comp','Bauteil'],['loop','Schleife'],['signal','Signale'],['safe','Sicherheit']]
+};
+var LM=store.get('lm','rl');if(LM!=='im')LM='rl';
+function mk(){return tab==='learn'&&LM==='im'?'im':tab}
+function setMode(m){mode=m;renderModes();renderInfo()}
+function renderModes(){$('exModes').innerHTML=MODES[mk()].map(function(x){return '<button type="button" data-m="'+x[0]+'" aria-pressed="'+(mode===x[0])+'">'+x[1]+'</button>'}).join('')}
+$('exModes').addEventListener('click',function(e){var b=e.target.closest('[data-m]');if(b)setMode(b.dataset.m)});
+function info(title,html){$('exT').textContent=title;$('exB').innerHTML=html;$('exB').scrollTop=0}
+var HELP={
+ build:'<p><b>Bau Nori aus 14 Teilen zusammen.</b> Tippe unten auf ein Teil. Gelb umrandete Teile passen jetzt, blasse Teile brauchen erst ein anderes Teil.</p><p>Hier im Fenster steht dann, was das Teil kann. Mit <b>Ausbauen</b> nimmst du ein Teil wieder heraus, mit <b>↶ Zurück</b> das zuletzt eingebaute.</p><p>Sobald Akku, Beine und Füße drin sind, kannst du Nori unter <b>Testen</b> bewegen.</p>',
+ test:'<p><b>Geschafft, Nori ist zusammengebaut!</b> Jetzt probierst du ihn aus. Das ist deine Aufgabe:</p><ol><li><b>Wecken:</b> Tippe auf <b>Klatschen</b>. Nori hört dich mit seinen Ohren und wacht auf.</li><li><b>Vom Ständer nehmen:</b> Tippe auf <b>Vom Ständer</b>. Nori steht jetzt allein. Er fällt um, wenn sein Schwerpunkt nicht mehr über den Füßen liegt. Mit <b>Schwerpunkt</b> auf der Bühne siehst du das.</li><li><b>Bewegen:</b> Tippe auf <b>Regler zeigen</b>. Mit einem Regler stellst du ein Gelenk ein, ein Servo fährt genau auf diesen Winkel.</li><li><b>Programmieren:</b> Stell eine Haltung ein und speichere sie mit <b>+ Pose</b>. Mehrere Posen hintereinander ergeben eine Bewegung. <b>Beispiel</b> lädt einen fertigen Gang.</li></ol><div class="exbtns" id="exRevW"><button class="b main" id="exReveal" type="button">Verstanden, Regler zeigen</button></div>',
+ park:'<p><b>Jetzt zeigt Nori, was er kann.</b> Der Parcours hat 7 Stationen, vom Wecken über Laufen und Sprint bis zu <b>Tanzen</b> (eine Choreografie aus Posen zum Beat) und <b>Fußball</b> (Ball ins Tor schießen). Wähle eine Station und dann, <b>wer Nori steuert</b>:</p><ul><li><b>Posen</b>: dein Programm aus Schritt 2, du hast es selbst programmiert.</li><li><b>Belohnung</b>: was Nori in Schritt 4 selbst gelernt hat.</li><li><b>Nachmachen</b>: was du ihm in Schritt 5 vorgemacht hast.</li></ul><p>Unter <b>Ergebnis</b> siehst du, welche Methode welche Station schafft. Nicht jede kann alles! Für „Ein Bein“ muss Nori unter Belohnung die Aufgabe „Ein Bein“ geübt haben, oder du programmierst eine passende Pose.</p>',
+ brain:'<p><b>Im Bauch von Nori steckt sein Gehirn: zwei Rechner, die zusammenarbeiten.</b> Oben siehst du den Schaltplan. <span style="color:var(--mint)">Grüne Linien</span> sind Daten, <span style="color:var(--amber)">gelbe Linien</span> sind Strom.</p><ul><li><b>Hauptrechner</b> (wie ein Raspberry Pi 5 oder Jetson): denkt. Er wertet die Kamera aus und fragt das gelernte Modell, was als Nächstes passiert.</li><li><b>Mikrocontroller</b> (wie ein ESP32 oder STM32): reagiert blitzschnell und pünktlich. Er liest die Sensoren und steuert die Servos.</li></ul><p>Tippe auf ein Bauteil im Plan. Mit <b>▶ Regelschleife</b> siehst du in Zeitlupe, was 50- bis 100-mal pro Sekunde in Nori passiert. <b>Laufen lassen</b> zeigt es mit echten Werten.</p>',
+ im:'<p><b>Du bist jetzt die Lehrerin oder der Lehrer.</b> Tippe nacheinander auf die grünen Bausteine und mach Nori eine Bewegung vor. Nori merkt sich dabei für jede Lage, was du dort gemacht hast.</p><ol><li><b>Vormachen:</b> Baustein antippen, Nori führt ihn aus. Fällt er um, vergisst er diesen letzten Schritt wieder, denn den will er nicht nachmachen.</li><li><b>Fertig</b> beendet die Aufnahme. Du kannst mehrmals vormachen, dann zählt, was du am häufigsten gezeigt hast.</li><li><b>Nachmachen:</b> Nori liest seine Lage ab und tut, was du dort gemacht hast. Kennt er eine Lage nicht, bleibt er ratlos stehen.</li></ol><p>Das heißt <b>Imitation Learning</b>, Lernen durch Vormachen. Es geht viel schneller als Lernen durch Belohnung, aber Nori wird nie besser als sein Vorbild.</p><p class="sec"><b>Tipp für einen Gang:</b> Gew. L, R vor, Setzen, Gew. R, L vor, Setzen, und wieder von vorn. Mit <b>Als Vorwissen</b> gibst du dein Vormachen an das Lernen mit Belohnung weiter, so wie echte Roboterfirmen es auch machen.</p>',
+ learn:'<p><b>Hier programmiert niemand Nori.</b> Er probiert in jedem Takt einen von 6 Bewegungsbausteinen aus und bekommt dafür Punkte. In einer Tabelle merkt er sich, was sich lohnt. Das heißt Reinforcement Learning, Lernen durch Belohnung.</p><ol><li><b>Lage ablesen:</b> Wo ist das Gewicht? Welches Bein ist vorn, welches gehoben?</li><li><b>Baustein wählen:</b> meistens den besten aus der Tabelle, manchmal zufällig etwas Neues.</li><li><b>Punkte bekommen</b> und den Wert in der Tabelle anpassen.</li></ol><p><b>Üben</b> läuft im Zeitraffer. <b>Schritt für Schritt</b> hält nach jedem Takt an und erklärt alles. <b>Vorführen</b> zeigt, was Nori kann, ganz ohne Zufall.</p><p class="sec">Echte Laufroboter lernen genauso, nur mit Millionen Versuchen in einer Physik-Simulation, mit allen Gelenkwinkeln statt 6 Bausteinen und mit einem neuronalen Netz statt einer Tabelle.</p>'
+};
+var STORY='<h4>1 · Wer macht was?</h4><p>Nori ist der <b>Lerner</b>. Alles um ihn herum ist die <b>Umgebung</b>: Boden, Schwerkraft, Physik. In jedem Takt (0,4 s) passiert dasselbe: Nori <b>sieht seine Lage</b>, wählt eine <b>Aktion</b> (einen der 6 Bausteine), die Umgebung antwortet, und er bekommt eine <b>Belohnung</b>, also Punkte.</p><h4>2 · Niemand sagt ihm, wie man läuft</h4><p>Nori kennt nur Punkte. Er weiß nicht, dass „Bein absetzen“ gut ist. Das findet er heraus, indem er es ausprobiert. Die Aufgabe steckt allein in den Punkten: <b>+1 pro cm</b> nach vorn, <b>−20 fürs Umfallen</b>. Ändere die Punkte unter „Belohnung“, und Nori lernt etwas anderes.</p><h4>3 · Das Gedächtnis ist eine Tabelle</h4><p>Für jede Lage (27 Stück) und jeden Baustein (6 Stück) steht eine Zahl in der Tabelle: <b>Wie viel erwarte ich mir davon?</b> Anfangs überall 0, Nori weiß nichts. Er wählt in jeder Lage den Baustein mit der größten Zahl.</p><h4>4 · Ein Rechenbeispiel</h4><p>Nori steht in Lage A und wählt „Bein absetzen“. Der Wert in der Tabelle ist 0. Er kommt 5,7 cm weiter, also <b>+5,7 Punkte</b>. In der neuen Lage B ist sein bester Tabellenwert 4. Dann gilt:</p><p class="sec"><b>neu = alt + 0,3 × (Punkte + 0,9 × bester Wert der neuen Lage − alt)</b><br>neu = 0 + 0,3 × (5,7 + 0,9 × 4 − 0) = <b>2,79</b></p><ul><li><b>0,3</b> (Lernrate): Nori ändert sich in kleinen Schritten, nicht gleich ganz.</li><li><b>0,9 × bester Wert der neuen Lage</b>: Auch die <b>Zukunft</b> zählt. Gewicht verlagern gibt 0 Punkte, aber es führt in eine Lage, in der das Absetzen +5,7 bringt. Darum lernt Nori es trotzdem.</li></ul><p>Und beim Umfallen: alt 0, Punkte −20, danach gibt es keine Zukunft. neu = 0 + 0,3 × (−20 − 0) = <b>−6</b>. Diesen Baustein meidet Nori in dieser Lage künftig.</p><h4>5 · Ausprobieren oder Bewährtes?</h4><p>Wenn Nori nur das Beste aus der Tabelle nimmt, entdeckt er nie etwas Neues. Darum wählt er mit <b>20 % Zufall</b> einen beliebigen Baustein. Das nennt man <b>Erkunden</b>. Der Rest ist <b>Ausnutzen</b>. Mit viel Zufall stürzt er oft, mit gar keinem bleibt er manchmal in einem mittelmäßigen Gang hängen. Probier es unter „Belohnung“ aus.</p><h4>6 · Woran siehst du, dass er lernt?</h4><p>Die <b>Kurve</b> steigt: Mit der Zeit bringt jeder Versuch mehr Punkte. Die rote Linie ist die Prüfung ohne Zufall. In der <b>Tabelle</b> werden die grünen Felder (beste Bausteine) immer deutlicher, und beim <b>Vorführen</b> läuft Nori ruhig und gleichmäßig.</p><p class="sec">Mit „Schritt für Schritt“ siehst du genau diese Rechnung bei jedem Takt mit den echten Zahlen.</p>';
+var POINTS='<p>Nach jedem Takt rechnet Nori seine Punkte aus. Bei „Laufen“: <b>+1 pro cm</b> nach vorn, <b>−20 fürs Umfallen</b>.</p><div class="ex3"><div><b class="n" style="color:var(--mint)">+5,7</b><span><b>Bein abgesetzt.</b> 5,7 cm weiter, also sofort 5,7 Punkte.</span></div><div><b class="n" style="color:var(--muted)">0</b><span><b>Gewicht verlagert.</b> Kein Zentimeter, keine Punkte. Lohnt sich trotzdem: Danach kann er ein Bein heben, ohne zu fallen. Das lernt er, weil auch der Wert der nächsten Lage zählt.</span></div><div><b class="n" style="color:var(--coral)">−20</b><span><b>Bein gehoben ohne Gewicht verlagern.</b> Der Schwerpunkt ist nicht über dem Standbein, Nori kippt um. Versuch vorbei.</span></div></div><p class="sec" style="color:var(--muted)">Neuer Tabellenwert = alter Wert + 30 % × (Punkte jetzt + 90 % vom besten Wert der neuen Lage − alter Wert).</p>';
+function renderInfo(){
+  if(mode==='help')info('Schritt '+STEPN[step]+' · '+STEPL[step],HELP[mk()]);
+  else if(mode==='regler'){info('Alle Regler','<div class="aj" id="allJ"></div>');buildAllJ()}
+  else if(mode==='story')info('Belohnen, genau erklärt',STORY);
+  else if(mode==='station')stationInfo();
+  else if(mode==='score')scoreInfo();
+  else if(mode==='demo'){info('Noris Vormach-Tabelle','<p style="color:var(--muted)">Für jede Lage zählt Nori mit, welchen Baustein du dort vorgemacht hast. Beim Nachmachen nimmt er den, den du am häufigsten gezeigt hast (grün).</p><div class="qwrap"><table class="qt" id="imQ"></table></div>');demoTable()}
+  else if(mode==='cmp')info('Vergleich',cmpHtml());
+  else if(mode==='comp')compInfo();
+  else if(mode==='loop')loopInfo();
+  else if(mode==='signal')info('Signale',SIGNAL);
+  else if(mode==='safe')safeInfo();
+  else if(mode==='part')showPart(sel,true);
+  else if(mode==='missions'){var n=MISSIONS.filter(function(m){return done[m.id]}).length;info('Aufgaben '+n+'/'+MISSIONS.length,'<ul class="missions">'+MISSIONS.map(function(m){var ok=!!done[m.id];return '<li class="'+(ok?'ok':'')+'"><span class="ck" aria-hidden="true">'+(ok?'✓':'')+'</span><span>'+m.t+'</span></li>'}).join('')+'</ul>')}
+  else if(mode==='points')info('Plus- und Minuspunkte',POINTS);
+  else if(mode==='curve'){info('Lernkurve','<svg id="rlCurve" viewBox="0 0 340 150" role="img" aria-label="Lernkurve"></svg>');drawCurve(Hs())}
+  else if(mode==='table'){info('Noris Tabelle','<p style="color:var(--muted)">Jede Zeile ist eine Lage, die Nori erlebt hat. Die Zahlen sagen, wie viele Punkte er sich von jedem Baustein erwartet. Grün tut er in dieser Lage.</p><div class="qwrap"><table class="qt" id="rlQ"></table></div>');drawQ()}
+  else if(mode==='reward'){var w=W();info('Belohnung für „'+RLT[RL.task].n+'“','<p style="color:var(--muted)">Die Aufgabe steckt nur in den Punkten. Ändere sie und lass Nori neu üben.</p>'+WSL.map(function(x){return '<div class="jrow" style="margin-bottom:4px"><label for="w_'+x.k+'">'+x.n+'</label><input type="range" id="w_'+x.k+'" data-w="'+x.k+'" min="'+x.min+'" max="'+x.max+'" step="'+x.st+'" value="'+w[x.k]+'"><output id="wo_'+x.k+'">'+(x.k==='fall'?'−':'+')+w[x.k]+'</output></div>'}).join('')+'<div class="jrow"><label for="w_eps">Zufall</label><input type="range" id="w_eps" min="0" max="50" step="5" value="'+Math.round(RL.eps*100)+'"><output id="wo_eps">'+Math.round(RL.eps*100)+' %</output></div>')}
+}
+$('exB').addEventListener('input',function(e){var t=e.target;if(t.id==='w_eps'){RL.eps=t.value/100;$('wo_eps').textContent=t.value+' %'}else if(t.dataset.w){W()[t.dataset.w]=+t.value;$('wo_'+t.dataset.w).textContent=(t.dataset.w==='fall'?'−':'+')+t.value}saveRL()});
+function mission(id){if(done[id])return;done[id]=true;if(id==='rlwalk'){LFSEEN=true;setTimeout(openLearnFilm,1800)}store.set('missions',done);S.happyT=2;var m=MISSIONS.find(function(x){return x.id===id});say('Aufgabe geschafft: '+m.t);if(mode==='missions')renderInfo();updMis()}
+function updMis(){$('sMis').textContent=MISSIONS.filter(function(m){return done[m.id]}).length+'/'+MISSIONS.length;if(typeof updNext==='function')updNext()}
+function renderMissions(){updMis();if(mode==='missions')renderInfo()}
+
+/* ---------- Bauen ---------- */
+var SHORT={rumpf:'Rumpf',akku:'Akku',imu:'Lage',huefte:'Hüfte',oberbein:'Knie',unterbein:'Knöchel',fuesse:'Füße',hals:'Hals',kopf:'Kopf',kamera:'Kamera',ohren:'Ohren',schulter:'Schulter',arme:'Arme',greifer:'Greifer'};
+var sel='rumpf',order=store.get('order',[]);
+function canInstall(p){return !p.on&&p.need.every(on)}
+function dependents(id){return PARTS.filter(function(p){return p.on&&p.need.indexOf(id)>=0})}
+function canRemove(p){return p.on&&!dependents(p.id).length}
+function showPart(id,keep){
+  var p=P[id],ty=TYPES[p.type],st;
+  if(p.on){var d=dependents(id);st=d.length?'Eingebaut. Zum Ausbauen erst: '+d.map(function(x){return SHORT[x.id]}).join(', ')+'.':'Eingebaut. Mit „Ausbauen“ nimmst du es wieder heraus.'}
+  else{var miss=p.need.filter(function(x){return !on(x)});st=miss.length?'Passt noch nicht. Zuerst: '+miss.map(function(x){return SHORT[x]}).join(', ')+'.':'Passt jetzt. Tippe auf „Einbauen“.'}
+  info(p.name,'<span class="chip '+ty[1]+'">'+ty[0]+'</span><p>'+p.text+'</p><p style="color:var(--muted)">'+st+'</p>');
+  if(!keep&&tab==='build'){mode='part';renderModes()}
+}
+function renderBuild(){
+  var n=PARTS.filter(function(p){return p.on}).length;
+  $('cnt').textContent=n+'/14 Teile';$('barI').style.width=(n/14*100)+'%';
+  $('tray').innerHTML=PARTS.map(function(p){return '<button type="button" class="pc '+(p.on?'on':canInstall(p)?'ok':'lock')+(sel===p.id?' sel':'')+'" data-id="'+p.id+'" title="'+p.name+'"><i class="'+TYPES[p.type][1]+'"></i><span>'+SHORT[p.id]+'</span></button>'}).join('');
+  var p=P[sel];$('bAct').textContent=p.on?'Ausbauen':'Einbauen';$('bAct').disabled=p.on?!canRemove(p):!canInstall(p);
+  $('bUndo').disabled=!order.length;$('bAll').disabled=PARTS.every(function(x){return x.on});$('bReset').disabled=!n;
+  var r=legsReady();$('tabTest').disabled=!r;$('tabLearn').disabled=!r;$('tabImit').disabled=!r;$('tabPark').disabled=!r;if(typeof updNext==='function')updNext();$('bStand').disabled=!r;
+}
+function install(id,quiet){
+  var p=P[id];if(!canInstall(p))return;p.on=true;p.items.forEach(function(w){w.userData.f=5});
+  order.push(id);store.set('order',order);store.set('parts',PARTS.filter(function(x){return x.on}).map(function(x){return x.id}));
+  if(!quiet){
+    if(awakeHW()&&(id==='akku'||id==='kopf')){S.asleep=true;say(on('ohren')?'Ich bin noch müde. Weck mich unter „Testen“ mit einem Klatschen!':'Zzz … Ich schlafe. Mit Ohren könnte ich ein Klatschen hören.')}
+    else say(p.say);
+    showPart(id);
+    var nx=PARTS.find(canInstall);if(nx)sel=nx.id;
+  }
+  renderBuild();
+  if(!quiet&&PARTS.every(function(x){return x.on}))autoTest();
+}
+var autoT2=null;
+function openLearnFilm(){var o=$('flearn'),v=$('learnV');if(!o.hidden)return;o.hidden=false;v.preload='auto';
+  try{v.currentTime=0;v.muted=false;var p=v.play();if(p&&p.catch)p.catch(function(){v.muted=true;try{var q=v.play();if(q&&q.catch)q.catch(function(){})}catch(e){}})}catch(e){}}
+function closeLearnFilm(){var o=$('flearn');if(o.hidden)return;o.hidden=true;try{$('learnV').pause()}catch(e){}if(legsReady()&&!busyRL()&&step==='learn')showTab('imit')}
+$('bLearnX').addEventListener('click',closeLearnFilm);
+$('learnV').addEventListener('ended',function(){setTimeout(closeLearnFilm,600)});
+$('flearn').addEventListener('click',function(e){if(e.target===this)closeLearnFilm()});
+function autoTest(){clearTimeout(autoT2);if(tab!=='build'||!$('fdone').hidden)return;S.happyT=3;
+  var o=$('fdone'),v=$('doneV');o.hidden=false;v.preload='auto';say('Toll, hast du das gemacht! Gratuliere! Jetzt kannst du mich testen.');
+  try{v.currentTime=0;v.muted=false;var p=v.play();if(p&&p.catch)p.catch(function(){v.muted=true;try{var q=v.play();if(q&&q.catch)q.catch(function(){})}catch(e){}})}catch(e){}}
+function closeDone(){var o=$('fdone');if(o.hidden)return;o.hidden=true;try{$('doneV').pause()}catch(e){}
+  if(PARTS.every(function(x){return x.on})&&tab==='build'){TREV=false;showTab('test')}}
+$('bDoneX').addEventListener('click',closeDone);
+$('doneV').addEventListener('ended',function(){setTimeout(closeDone,600)});
+$('fdone').addEventListener('click',function(e){if(e.target===this)closeDone()});
+function removePart(id,quiet){
+  var p=P[id];if(!canRemove(p))return;p.on=false;TREV=false;
+  order=order.filter(function(x){return x!==id});store.set('order',order);store.set('parts',PARTS.filter(function(x){return x.on}).map(function(x){return x.id}));
+  if(id==='greifer'&&held){scene.attach(block);held=null;blockVy=0}
+  if(id==='akku'||id==='kopf')S.asleep=true;
+  if(!legsReady()){if(LIVE){LIVE=null}REC=null;PK=null;TR.left=0;if(!S.onStand)toStand();if(tab!=='build')showTab('build')}
+  if(!quiet){say(SHORT[id]+' ist wieder ausgebaut.');sel=id;showPart(id)}
+  renderBuild();
+}
+$('tray').addEventListener('click',function(e){var b=e.target.closest('.pc');if(!b)return;sel=b.dataset.id;if(canInstall(P[sel]))install(sel);else{showPart(sel);renderBuild()}});
+$('bAct').addEventListener('click',function(){if(P[sel].on)removePart(sel);else install(sel)});
+$('bUndo').addEventListener('click',function(){for(var i=order.length-1;i>=0;i--){if(canRemove(P[order[i]])){removePart(order[i]);return}}});
+$('bAll').addEventListener('click',function(){var g=0,nx;while((nx=PARTS.find(canInstall))&&g++<20)install(nx.id,true);S.asleep=true;say('Alle Teile sind drin! Ich bin noch müde. Klatsch unter „Testen“ in die Hände.');sel='greifer';showPart('greifer');renderBuild();autoTest()});
+$('bReset').addEventListener('click',function(){
+  if(LIVE)LIVE=null;REC=null;TR.left=0;if(!S.onStand)toStand();
+  for(var i=order.length-1;i>=0;i--)removePart(order[i],true);
+  PARTS.forEach(function(p){p.on=false});order=[];store.set('order',[]);store.set('parts',[]);
+  sel='rumpf';S.asleep=true;resetBlock();home();say('Alles zerlegt. Fang wieder mit dem Rumpf an.');showTab('build');renderBuild();
+});
+
+/* ---------- Tabs ---------- */
+var TREV=false;
+function renderRev(){$('tCtl').hidden=!TREV;$('tHint').hidden=TREV;var w=$('exRevW');if(w)w.hidden=TREV}
+function revealCtl(){TREV=true;renderRev();if(tab==='test'){renderJoint();setMode('regler');say('Jetzt siehst du alle Regler auf einmal.')}}
+$('bReveal').addEventListener('click',revealCtl);
+var LFSEEN=false;
+var STEPS=[['build','tabBuild','pBuild'],['test','tabTest','pTest'],['brain','tabBrain','pBrain'],['learn','tabLearn','pLearn'],['imit','tabImit','pLearn'],['park','tabPark','pPark']];
+function showTab(t){
+  if(tab==='brain'&&t!=='brain'){stopBrWalk();setLoop(false)}
+  if(step==='park'&&t!=='park')parkStop(true);if(t!=='park'&&BALL.visible){BALL.visible=GOAL.visible=false}
+  if(REC&&t!=='imit')stopRec(true);
+  var wasLearn=step==='learn';
+  step=t;tab=t==='imit'?'learn':t;
+  if(t==='imit'&&wasLearn&&done.rlwalk&&!LFSEEN){LFSEEN=true;setTimeout(openLearnFilm,500)}
+  STEPS.forEach(function(x){$(x[1]).setAttribute('aria-selected',x[0]===t)});['pBuild','pTest','pBrain','pLearn','pPark'].forEach(function(id){$(id).hidden=id!==STEPS.find(function(x){return x[0]===t})[2]});
+  mode='help';if(tab==='learn')setLM(t==='imit'?'im':'rl');else{renderModes();renderInfo()}if(t==='test'){renderJoint();renderRev()}if(t==='park')renderPark();updNext();if(t==='brain'){drawBoard();updBr()}
+}
+$('tabBuild').addEventListener('click',function(){showTab('build')});
+$('tabTest').addEventListener('click',function(){if(legsReady())showTab('test')});
+$('tabLearn').addEventListener('click',function(){if(legsReady())showTab('learn')});
+$('tabBrain').addEventListener('click',function(){showTab('brain')});
+$('tabImit').addEventListener('click',function(){if(legsReady())showTab('imit')});
+$('tabPark').addEventListener('click',function(){if(legsReady())showTab('park')});
+
+/* ---------- Testen ---------- */
+function toStand(){if(S.state!=='ok'){fallG.position.set(0,0,0);fallG.rotation.set(0,0,0);S.state='ok';$('bUp').hidden=true}S.onStand=true;S.playing=false;updPlay();S.stance=null}
+function offStand(){home();for(var k in cur)cur[k]=0;S.onStand=false;S.state='ok';S.stance=null;root.position.set(0,0,0);S.startZ=0;S.leftStandT=0}
+$('bStand').addEventListener('click',function(){
+  if(S.onStand){offStand();say(S.asleep?'Zzz …':'Huch, jetzt stehe ich allein. Halt mich gut im Gleichgewicht!')}
+  else{toStand();home();say('Zurück auf dem Ständer. Hier kann ich nicht umfallen.')}
+});
+$('bHome').addEventListener('click',function(){S.playing=false;updPlay();home()});
+$('bClap').addEventListener('click',function(){
+  S.mic=1;if(!on('ohren')){say(awakeHW()?'… (Nori hat keine Mikrofone und hört nichts.)':'Klatsch! Aber Nori hat noch keine Ohren.');return}
+  if(!awakeHW()){say('Klatsch! Ohne Akku und Kopf kann Nori nicht reagieren.');return}
+  if(S.asleep){S.asleep=false;S.happyT=2.5;mission('wake');say('Guten Morgen! Ich habe dich gehört.');if(PK&&PK.st==='wake')parkFinish(true,'Nori ist wach!')}else say('Ich hab’s gehört! Das kam von vorn.');
+  tgt.head=0;syncSliders();
+});
+$('bUp').addEventListener('click',standUp);
+$('bExplode').addEventListener('click',function(){S.explode=!S.explode;this.setAttribute('aria-pressed',S.explode)});
+$('bCom').addEventListener('click',function(){S.showCom=!S.showCom;this.setAttribute('aria-pressed',S.showCom);if(S.showCom)say('Roter Punkt: Schwerpunkt. Bleibt er über der grünen Fläche unter den Füßen, fällt Nori nicht um.')});
+$('bView').addEventListener('click',resetView);
+var jk='hipL';
+$('jSel').innerHTML=['Beine','Kopf','Arme'].map(function(g){return '<optgroup label="'+g+'">'+JOINTS.filter(function(j){return j.g===g}).map(function(j){return '<option value="'+j.k+'">'+j.n.replace('Gewicht ← R | L →','Gewicht verlagern')+'</option>'}).join('')+'</optgroup>'}).join('');
+function jdef(){return JOINTS.find(function(j){return j.k===jk})}
+function renderJoint(){
+  JOINTS.forEach(function(j){var o=$('jSel').querySelector('option[value="'+j.k+'"]');o.disabled=!on(j.part)});
+  if(!on(jdef().part)){var f=JOINTS.find(function(j){return on(j.part)});if(f)jk=f.k}
+  var j=jdef(),r=$('jRange');$('jSel').value=jk;r.min=j.min;r.max=j.max;r.step=1;r.value=Math.round(tgt[jk]);r.disabled=!on(j.part);
+  $('jOut').textContent=Math.round(tgt[jk])+(j.unit||'°');
+}
+var SHN={hipL:'Hüfte L',hipR:'Hüfte R',lean:'Gewicht',kneeL:'Knie L',kneeR:'Knie R',ankL:'Fuß L',ankR:'Fuß R',head:'Kopf',shL:'Arm L',shR:'Arm R',elL:'Ellb. L',elR:'Ellb. R',grip:'Greifer'};var JS=function(j){return SHN[j.k]||j.n};
+function buildAllJ(){var el=$('allJ');if(!el)return;el.innerHTML=JOINTS.map(function(j){return '<div class="'+(on(j.part)?'':'off')+'"><label for="aj_'+j.k+'" title="'+j.n+'">'+JS(j)+'</label><input type="range" id="aj_'+j.k+'" data-j="'+j.k+'" min="'+j.min+'" max="'+j.max+'" step="1" value="'+Math.round(tgt[j.k])+'"'+(on(j.part)?'':' disabled')+'><output id="ao_'+j.k+'">'+Math.round(tgt[j.k])+(j.unit||'°')+'</output></div>'}).join('')}
+function updAllJ(){if(!$('allJ'))return;JOINTS.forEach(function(j){var r=$('aj_'+j.k);if(!r)return;if(document.activeElement!==r)r.value=Math.round(tgt[j.k]);$('ao_'+j.k).textContent=Math.round(tgt[j.k])+(j.unit||'°')})}
+$('exB').addEventListener('input',function(e){var k=e.target.dataset&&e.target.dataset.j;if(!k)return;tgt[k]=+e.target.value;$('ao_'+k).textContent=e.target.value+((JOINTS.find(function(j){return j.k===k})||{}).unit||'°');if(S.playing){S.playing=false;updPlay()}hl(k)});
+function syncSliders(){updAllJ();var r=$('jRange'),j=jdef();if(document.activeElement!==r)r.value=Math.round(tgt[jk]);$('jOut').textContent=Math.round(tgt[jk])+(j.unit||'°')}
+$('jSel').addEventListener('change',function(){jk=this.value;renderJoint();hl(jk);var j=jdef();say(j.n.replace('Gewicht ← R | L →','Gewicht verlagern')+': schieb den Regler.')});
+$('jRange').addEventListener('input',function(){tgt[jk]=+this.value;$('jOut').textContent=this.value+(jdef().unit||'°');if(S.playing){S.playing=false;updPlay()}hl(jk)});
+var HL={hipL:[legs.L.sv1],hipR:[legs.R.sv1],lean:[legs.L.sv1,legs.R.sv1],kneeL:[legs.L.sv2],kneeR:[legs.R.sv2],ankL:[legs.L.sv3],ankR:[legs.R.sv3],head:[nsv],shL:[arms.L.sv1],shR:[arms.R.sv1],elL:[arms.L.sv2],elR:[arms.R.sv2],grip:[]};
+var hlT=null;function hl(k){servoMats.forEach(function(m){m.emissive.setHex(0)});(HL[k]||[]).forEach(function(o){o.material.emissive.setHex(0x2fbf86);o.material.emissiveIntensity=.8});clearTimeout(hlT);if(k)hlT=setTimeout(function(){hl(null)},1500)}
+function updUI(){
+  var t=S.state==='ok'&&!S.onStand?0:S.tilt;
+  $('sTilt').textContent=on('imu')?(S.onStand?'am Ständer':Math.round(t)+'° '+(t>45?'liegt':t>3?'kippt':'steht')):'fehlt';
+  $('sMic').textContent=on('ohren')?(S.mic>.05?'laut! '+Math.round(S.mic*100)+' %':'still'):'fehlt';
+  $('sFeet').textContent=on('fuesse')?Math.round(S.fl*100)+' / '+Math.round(S.fr*100)+' %':'fehlt';
+  $('sCam').textContent=S.camTxt;
+  $('sGrip').textContent=on('greifer')?(held?'hält Stein':cur.grip>70?'zu':cur.grip<5?'offen':'halb'):'fehlt';
+  $('bStand').textContent=S.onStand?'Vom Ständer':'Auf den Ständer';
+}
+
+/* ---------- Posen ---------- */
+var EXAMPLE=[
+ {lean:10,hipR:20,hipL:-20,kneeL:0,kneeR:0},
+ {lean:-10,hipR:20,hipL:-20,kneeL:0,kneeR:0},
+ {lean:-10,hipL:22,kneeL:45,hipR:0,kneeR:0},
+ {lean:-10,hipL:20,hipR:-20,kneeL:0,kneeR:0},
+ {lean:10,hipL:20,hipR:-20,kneeL:0,kneeR:0},
+ {lean:10,hipR:22,kneeR:45,hipL:0,kneeL:0}
+];
+function renderPoses(){$('poses').innerHTML=poses.map(function(p,i){return '<button type="button" class="pose'+(S.playing&&S.pIdx===i?' on':'')+'" data-i="'+i+'" aria-label="Pose '+(i+1)+' einstellen">'+(i+1)+'</button>'}).join('')}
+function updPlay(){$('bPlay').textContent=S.playing?'■ Stopp':'▶ Abspielen';renderPoses()}
+$('poses').addEventListener('click',function(e){var b=e.target.closest('.pose');if(!b)return;S.playing=false;var p=poses[+b.dataset.i];JOINTS.forEach(function(j){if(p[j.k]!=null)tgt[j.k]=p[j.k]});syncSliders();updPlay()});
+$('bSave').addEventListener('click',function(){if(poses.length>=12){say('Mehr als 12 Posen passen nicht in meinen Speicher.');return}var p={};JOINTS.forEach(function(j){if(on(j.part))p[j.k]=Math.round(tgt[j.k])});poses.push(p);store.set('poses',poses);renderPoses();say('Pose '+poses.length+' gespeichert.')});
+$('bPlay').addEventListener('click',function(){
+  if(S.playing){S.playing=false;updPlay();return}
+  if(!poses.length){say('Speichere zuerst Posen oder lade das Beispiel.');return}
+  if(S.state!=='ok'){say('Stell mich erst wieder auf.');return}
+  if(S.onStand){offStand();say('Ich steige vom Ständer und lege los.')}
+  S.playing=true;S.pIdx=0;S.pT=0;S.pFrom=Object.assign({},tgt);updPlay();
+});
+$('bExample').addEventListener('click',function(){poses=EXAMPLE.map(function(p){return Object.assign({},p)});store.set('poses',poses);S.playing=false;updPlay();say('Beispiel geladen: 6 Posen für einen Gang. Drück „Abspielen“.')});
+$('bClearP').addEventListener('click',function(){poses=[];S.playing=false;store.set('poses',poses);updPlay();say('Alle Posen gelöscht.')});
+
+/* ---------- Lernen: Oberfläche ---------- */
+var COUNTS=[10,50,100,200,500,1000,2000,5000],SPEEDS=[.02,.05,.1,.25,.5,1,2];
+var CNT=store.get('cnt',3),SPD=store.get('spd2',5);S.speed=SPEEDS[SPD];
+$('rlCount').innerHTML=COUNTS.map(function(c,i){return '<option value="'+i+'">'+c+' Versuche</option>'}).join('');
+$('rlSpeed').innerHTML=SPEEDS.map(function(s,i){return '<option value="'+i+'">Tempo '+Math.round(s*100)+' %</option>'}).join('');
+function updCtl(){$('rlCount').value=CNT;$('rlSpeed').value=SPD;if($('imSpeed').options.length)$('imSpeed').value=SPD;S.speed=SPEEDS[SPD]}
+$('rlCount').addEventListener('change',function(){CNT=+this.value;store.set('cnt',CNT)});
+$('rlSpeed').addEventListener('change',function(){SPD=+this.value;store.set('spd2',SPD);updCtl()});
+updCtl();
+var TR={left:0},LIVE=null;
+function busyRL(){return TR.left>0||!!LIVE||!!REC||!!(PK&&PK.st!=='wake')}
+function wake(){if(awakeHW()&&S.asleep)S.asleep=false}
+function trainStep(){
+  var t0=performance.now();
+  while(TR.left>0&&performance.now()-t0<14){record(simEpisode());TR.left--}
+  if(TR.stop){TR.left=0;TR.stop=false}
+  if(TR.left===0){epReset();saveRL();renderRL();var h=Hs(),lt=h.test[h.test.length-1];
+    var msg='Fertig geübt: '+h.n+' Versuche insgesamt. '+(lt?'Prüfung ohne Zufall: '+(RL.task==='walk'?Math.max(0,lt.dist)+' cm':Math.round(lt.ret)+' Punkte')+(lt.fell?', aber umgefallen.':', ohne Sturz.'):'')+' Drück „Vorführen“.';
+    say(msg);if(mode==='curve'||mode==='table')renderInfo()}
+  else if((trainStep.n=(trainStep.n||0)+1)%6===0){renderRL();if(mode==='curve')drawCurve(Hs())}
+}
+function renderRL(){
+  $('rlTasks').innerHTML=Object.keys(RLT).map(function(k){return '<button type="button" class="b" data-k="'+k+'" aria-pressed="'+(RL.task===k)+'">'+RLT[k].n+'</button>'}).join('');
+  var h=Hs(),lt=h.test[h.test.length-1],f=h.fell.slice(-20),fs=f.reduce(function(a,b){return a+b},0);
+  $('rlStat').innerHTML=TR.left>0?'<b>Nori übt im Zeitraffer …</b> noch '+TR.left+' Versuche':'Versuche <b>'+h.n+'</b> · Prüfung <b>'+(lt?(RL.task==='walk'?Math.max(0,lt.dist)+' cm':Math.round(lt.ret)+' P')+(lt.fell?' (gefallen)':''):'–')+'</b> · Stürze beim Üben <b>'+(f.length?fs+'/'+f.length:'–')+'</b>';
+  var b=busyRL();['bExplain','bWatch','bDemo','bForget','rlCount'].forEach(function(id){$(id).disabled=b});
+  $('bTrain').disabled=!!LIVE||!!REC;$('bTrain').textContent=TR.left>0?'Abbrechen':'Üben';
+  document.querySelectorAll('.seg [data-l]').forEach(function(x){x.disabled=b});
+  if(typeof renderIM==='function'&&$('imBlocks').children.length)renderIM();
+}
+function drawCurve(hh){
+  var el=$('rlCurve');if(!el)return;
+  var d=hh.ret,Wc=340,Hc=150,L=34,Rm=8,T=10,B=34,h='';
+  if(!d.length){h='<text x="170" y="74" text-anchor="middle" font-size="13" style="fill:var(--muted)">Noch keine Versuche. Drück „Üben“.</text>'}
+  else{
+    var n=d.length,off=hh.n-n,ts=hh.test.filter(function(t){return t.n-1-off>=0}),all=d.concat(ts.map(function(t){return t.ret}));
+    var lo=Math.min(0,Math.min.apply(null,all)),hi=Math.max(1,Math.max.apply(null,all));
+    var y=function(v){return T+(Hc-T-B)*(1-(v-lo)/(hi-lo))},x=function(i){return L+(n<2?0:(Wc-L-Rm)*i/(n-1))};
+    [lo,0,hi].forEach(function(v,i){if(i===1&&lo===0)return;h+='<line x1="'+L+'" x2="'+(Wc-Rm)+'" y1="'+y(v)+'" y2="'+y(v)+'" style="stroke:var(--line)"'+(i===1?' stroke-dasharray="3 3"':'')+'/><text x="'+(L-5)+'" y="'+(y(v)+4)+'" text-anchor="end" font-size="10" style="fill:var(--muted)">'+Math.round(v)+'</text>'});
+    h+='<polyline fill="none" style="stroke:var(--muted)" stroke-opacity=".5" stroke-width="1" points="'+d.map(function(v,i){return x(i)+','+y(v)}).join(' ')+'"/>';
+    if(ts.length){h+='<polyline fill="none" style="stroke:var(--coral)" stroke-width="2.5" stroke-linejoin="round" points="'+ts.map(function(t){return x(t.n-1-off)+','+y(t.ret)}).join(' ')+'"/>';var lt=ts[ts.length-1];h+='<circle cx="'+x(lt.n-1-off)+'" cy="'+y(lt.ret)+'" r="4" style="fill:var(--coral)"/>'}
+    h+='<text x="'+L+'" y="'+(Hc-18)+'" font-size="10" style="fill:var(--muted)">Punkte pro Versuch · grau: Üben mit Zufall</text><text x="'+L+'" y="'+(Hc-5)+'" font-size="10" style="fill:var(--coral)">rot: Prüfung ohne Zufall nach je 10 Versuchen</text>';
+  }
+  el.innerHTML=h;
+}
+function f2(v){return (Math.round(v*100)/100).toFixed(2).replace('.',',')}
+function fmt(v){return (Math.round(v*10)/10).toString().replace('.',',')}
+function drawQ(hlc,curS){
+  var el=$('rlQ');if(!el)return;var Q=Qs(),rows='';
+  for(var s=0;s<NS;s++){var q=Q[s];if(q.every(function(v){return v===0})&&!(hlc&&hlc.s===s)&&curS!==s)continue;var m=Math.max.apply(null,q);
+    rows+='<tr class="'+(curS===s?'cur':'')+'"><td>'+stateTxt(s)+'</td>'+q.map(function(v,a){return '<td class="'+(v===m&&v!==0?'best':'')+(hlc&&hlc.s===s&&hlc.a===a?' hl':'')+'">'+fmt(v)+'</td>'}).join('')+'</tr>'}
+  el.innerHTML='<tr><th>Lage</th>'+ACTS.map(function(a){return '<th>'+a.s+'</th>'}).join('')+'</tr>'+(rows||'<tr><td colspan="7" style="color:var(--muted)">Noch leer. Nori hat noch nichts erlebt.</td></tr>');
+}
+$('rlTasks').addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(!b||busyRL())return;RL.task=b.dataset.k;saveRL();renderRL();if(mode!=='help'&&mode!=='points')renderInfo();say('Aufgabe „'+RLT[RL.task].n+'“. '+(Hs().n?'Dafür habe ich schon '+Hs().n+' Versuche geübt.':'Dafür habe ich noch nicht geübt.'))});
+$('bTrain').addEventListener('click',function(){if(TR.left>0){TR.stop=true;return}if(busyRL())return;wake();TR.left=COUNTS[CNT];renderRL();say('Ich übe jetzt ganz schnell. Nicht wundern, wenn ich herumzappele!')});
+$('bWatch').addEventListener('click',function(){if(!busyRL())startLive(true)});
+$('bDemo').addEventListener('click',function(){if(busyRL())return;if(!Hs().n)say('Ich habe noch nichts geübt, also rate ich nur. Drück erst „Üben“.');startLive(false)});
+$('bExplain').addEventListener('click',function(){if(busyRL())return;if(S.speed>.25){SPD=3;store.set('spd2',SPD);updCtl()}startLive(true);LIVE.explain=true});
+$('bForget').addEventListener('click',function(){if(busyRL())return;delete QT[RL.task];delete HI[RL.task];RL.w[RL.task]=Object.assign({},RLT[RL.task].w);saveRL();renderRL();renderInfo();say('Ich habe alles zur Aufgabe „'+RLT[RL.task].n+'“ vergessen.')});
+
+/* ---------- Nachmachen (Imitation Learning) ---------- */
+var IM=store.get('imit',null);if(!IM||!IM.cnt||IM.cnt.length!==NS)IM={cnt:[],steps:0,demos:0,last:null,lastDemo:null};
+if(!IM.cnt.length)for(var ii=0;ii<NS;ii++)IM.cnt.push([0,0,0,0,0,0]);
+var REC=null;
+function saveIM(){store.set('imit',IM)}
+function imAct(s){var c=IM.cnt[s],m=Math.max.apply(null,c);return m>0?c.indexOf(m):-1}
+function imKnown(){return IM.cnt.filter(function(c){return c.some(function(v){return v>0})}).length}
+var BLK=['Gew. L','Gew. R','L vor','R vor','Setzen','Gerade'];
+$('imBlocks').innerHTML=ACTS.map(function(a,i){return '<button type="button" class="blk" data-a="'+i+'" title="'+a.n+'" aria-label="'+a.n+'">'+BLK[i]+'</button>'}).join('');
+$('imSpeed').innerHTML=$('rlSpeed').innerHTML;
+$('imSpeed').addEventListener('change',function(){SPD=+this.value;store.set('spd2',SPD);updCtl()});
+function setLM(m){LM=m;store.set('lm',LM);document.querySelectorAll('.seg [data-l]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.l===LM)});
+  $('lRL').hidden=LM!=='rl';$('lIM').hidden=LM!=='im';$('rlTasks').hidden=LM!=='rl';
+  if(tab==='learn'){mode='help';renderModes();renderInfo()}renderRL()}
+document.querySelector('.seg').addEventListener('click',function(e){var b=e.target.closest('[data-l]');if(!b||busyRL()||b.dataset.l===LM)return;setLM(b.dataset.l);
+  say(LM==='im'?'Zeig mir, wie es geht! Tippe auf die grünen Bausteine.':'Jetzt lerne ich wieder allein durch Ausprobieren und Punkte.')});
+function startRec(){wake();epReset();syncSliders();REC={pend:null,n:0,z0:rootZ(),fallen:0};renderRL();say('Ich schaue genau zu. Tippe auf die Bausteine, ich mache sie sofort.')}
+function commitRec(){if(!REC||!REC.pend)return;var p=REC.pend;REC.pend=null;IM.cnt[p.s][p.a]++;IM.steps++;REC.n++;saveIM();if(mode==='demo')demoTable(p)}
+function stopRec(quiet){if(!REC)return;if(S.state==='ok')commitRec();else REC.pend=null;var r=REC,d=(rootZ()-r.z0)*10;REC=null;if(r.n){IM.demos++;IM.lastDemo={n:r.n,dist:Math.round(d)};saveIM()}renderRL();if(mode==='demo'||mode==='cmp')renderInfo();
+  if(!quiet)say(r.n?'Danke! Ich habe mir '+r.n+' Schritte gemerkt. Drück „Nachmachen“, dann probiere ich es allein.':'Du hast mir noch nichts vorgemacht.')}
+function stepRec(dt){
+  if(!REC||!REC.pend)return;
+  if(S.state!=='ok'){REC.pend=null;REC.fallen++;renderIM();say('Hoppla, umgefallen! Diesen Schritt merke ich mir nicht. Tippe auf „Nori aufstellen“ und mach weiter.');return}
+  REC.pend.t+=dt;if(REC.pend.t>TAKT*1.5){commitRec();renderIM()}
+}
+$('imBlocks').addEventListener('click',function(e){var b=e.target.closest('[data-a]');if(!b||b.disabled)return;
+  if(!REC){if(busyRL())return;startRec()}
+  if(S.state!=='ok'){say('Ich liege noch. Tippe erst auf „Nori aufstellen“.');return}
+  commitRec();var a=+b.dataset.a,s=rlState();ACTS[a].f(tgt);syncSliders();REC.pend={s:s,a:a,t:0};
+  b.classList.add('hit');setTimeout(function(){b.classList.remove('hit')},300);renderIM();
+  $('imStat').innerHTML='<b>Aufnahme:</b> '+stateTxt(s)+' → <b>'+ACTS[a].n+'</b>';
+});
+$('bRec').addEventListener('click',function(){if(REC)stopRec();else if(!busyRL())startRec()});
+$('bImit').addEventListener('click',function(){if(busyRL())return;if(!IM.steps){say('Du hast mir noch nichts vorgemacht. Tippe zuerst auf die grünen Bausteine.');return}startLive(false);LIVE.imit=true;say('Ich mache nach, was du mir gezeigt hast …')});
+$('bImRL').addEventListener('click',function(){if(busyRL())return;if(!IM.steps){say('Erst vormachen, dann kann ich es als Vorwissen nutzen.');return}
+  var k=RL.task;RL.task='walk';var Q=Qs(),n=0;for(var s=0;s<NS;s++){var a=imAct(s);if(a>=0){Q[s][a]=Math.max(Q[s][a],8);n++}}saveRL();showTab('learn');
+  say('Ich habe dein Vormachen für '+n+' Lagen in meine Belohnungs-Tabelle für „Laufen“ übernommen. Drück „Üben“, dann verbessere ich es selbst.')});
+$('bImForget').addEventListener('click',function(){if(busyRL())return;IM={cnt:[],steps:0,demos:0,last:null,lastDemo:null};for(var s=0;s<NS;s++)IM.cnt.push([0,0,0,0,0,0]);saveIM();renderRL();renderInfo();say('Ich habe alles vergessen, was du mir vorgemacht hast.')});
+function renderIM(){
+  var b=busyRL();$('bRec').textContent=REC?'■ Fertig':'● Vormachen';$('bRec').classList.toggle('rec',!!REC);$('bRec').disabled=b&&!REC;
+  ['bImit','bImRL','bImForget'].forEach(function(id){$(id).disabled=b});
+  document.querySelectorAll('#imBlocks .blk').forEach(function(x){x.disabled=!!LIVE||TR.left>0});
+  if(REC)$('imStat').innerHTML='<b style="color:#ff7b6b">● Aufnahme läuft:</b> '+REC.n+' Schritte gemerkt'+(REC.fallen?', '+REC.fallen+' wegen Sturz verworfen':'')+'. Mit „Fertig“ beenden.';
+  else if(!LIVE)$('imStat').innerHTML='Vorgemacht <b>'+IM.demos+'×</b> · Schritte <b>'+IM.steps+'</b> · Lagen bekannt <b>'+imKnown()+'</b> · Nachmachen <b>'+(IM.last?Math.max(0,IM.last.dist)+' cm'+(IM.last.fell?' (gefallen)':IM.last.unknown?' (ratlos)':''):'–')+'</b>';
+}
+function demoTable(hl){
+  var el=$('imQ');if(!el)return;var rows='',cs=LIVE&&LIVE.imit?rlState():-1;
+  for(var s=0;s<NS;s++){var c=IM.cnt[s];if(!c.some(function(v){return v>0})&&cs!==s)continue;var m=Math.max.apply(null,c);
+    rows+='<tr class="'+(cs===s?'cur':'')+'"><td>'+stateTxt(s)+'</td>'+c.map(function(v,a){return '<td class="'+(v===m&&v>0?'best':'')+(hl&&hl.s===s&&hl.a===a?' hl':'')+'">'+(v||'·')+'</td>'}).join('')+'</tr>'}
+  el.innerHTML='<tr><th>Lage</th>'+ACTS.map(function(a){return '<th>'+a.s+'</th>'}).join('')+'</tr>'+(rows||'<tr><td colspan="7" style="color:var(--muted)">Noch leer. Mach Nori etwas vor.</td></tr>');
+}
+function cmpHtml(){
+  var h=HI.walk,lt=h&&h.test&&h.test[h.test.length-1],im=IM.last;
+  var cell=function(t){return '<td style="text-align:left;padding:3px 6px">'+t+'</td>'};
+  return '<table class="qt" style="min-width:0;width:100%"><tr><th></th><th>Nachmachen</th><th>Belohnung</th></tr>'+
+  '<tr><td>Übung</td>'+cell('<b>'+IM.steps+'</b> Schritte vorgemacht')+cell('<b>'+(h?h.n:0)+'</b> Versuche')+'</tr>'+
+  '<tr><td>Laufen</td>'+cell(im?'<b>'+Math.max(0,im.dist)+' cm</b>'+(im.fell?', gefallen':im.unknown?', ratlos':''):'–')+cell(lt?'<b>'+Math.max(0,lt.dist)+' cm</b>'+(lt.fell?', gefallen':''):'–')+'</tr>'+
+  '<tr><td>Braucht</td>'+cell('einen Lehrer, der es kann')+cell('gute Punkte-Regeln und viel Zeit')+'</tr>'+
+  '<tr><td>Grenze</td>'+cell('nie besser als das Vorbild, ratlos in neuen Lagen')+cell('kann eigene, bessere Wege finden')+'</tr></table>'+
+  '<p class="sec">Beim Laufen schafft Nori mit 30 Takten höchstens etwa 55 cm. Mach es ihm geschickt vor, dann kommt er nach wenigen Schritten so weit wie nach hunderten Belohnungs-Versuchen.</p><p>Echte Roboter lernen oft mit beidem: Erst macht ein Mensch es vor, dann übt der Roboter mit Belohnung weiter. Das kannst du mit <b>Als Vorwissen</b> ausprobieren.</p>';
+}
+
+/* ---------- Lernen: live und Schritt für Schritt ---------- */
+function startLive(learnMode){wake();epReset();LIVE={learn:learnMode,t:TAKT,n:0,pend:null,z0:rootZ(),ret:0,oneT:0};renderRL();say(learnMode?'Ich probiere es mal …':'Pass auf, ich zeige dir, was ich gelernt habe!')}
+function stepLive(dt){
+  if(!LIVE||LIVE.paused)return;
+  if(S.state!=='ok'){
+    var inf=null;
+    if(LIVE.pend){var p=LIVE.pend,old=Qs()[p.s][p.a],r0=reward(0,true,false);LIVE.ret+=r0;if(LIVE.learn)learn(p.s,p.a,r0,0,true);inf={p:p,r:r0,dz:0,fell:true,old:old,neu:Qs()[p.s][p.a]}}
+    if(LIVE.explain&&inf)explainShow(inf,null,true);
+    endLive(true);return}
+  if(S.gL!==S.gR){LIVE.oneT+=dt;if(!LIVE.learn&&RL.task==='one'&&LIVE.oneT>2)mission('rlone')}else LIVE.oneT=0;
+  LIVE.t+=dt;if(LIVE.t<TAKT)return;LIVE.t=0;
+  var s=rlState(),inf2=null;
+  if(LIVE.pend){var p2=LIVE.pend,o=S.gL!==S.gR,dz=(rootZ()-p2.zb)*10,r=reward(dz,false,o),old2=Qs()[p2.s][p2.a];LIVE.ret+=r;if(LIVE.learn)learn(p2.s,p2.a,r,s,false);inf2={p:p2,r:r,dz:dz,one:o,fell:false,old:old2,neu:Qs()[p2.s][p2.a]}}
+  if(LIVE.n>=(LIVE.max||(LIVE.learn||LIVE.imit?MAXT:50))){if(LIVE.explain&&inf2)explainShow(inf2,null,true);endLive(false);return}
+  var c;
+  if(LIVE.imit){var ia=imAct(s);if(ia<0){LIVE.unknown=s;endLive(false);return}c={a:ia,rnd:false};if(mode==='demo')demoTable()}
+  else c=chooseX(s,LIVE.learn?RL.eps:0);
+  if(LIVE.explain){LIVE.paused=true;explainShow(inf2,{s:s,a:c.a,rnd:c.rnd},false);LIVE.next=function(){doAct(s,c.a,c.rnd)};return}
+  doAct(s,c.a,c.rnd);
+}
+function doAct(s,a,rnd){
+  ACTS[a].f(tgt);syncSliders();LIVE.pend={s:s,a:a,zb:rootZ()};LIVE.n++;
+  if(LIVE.imit)$('imStat').innerHTML='<b>Takt '+LIVE.n+':</b> '+stateTxt(s)+' → <b>'+ACTS[a].n+'</b> (wie vorgemacht)';
+  else if(!LIVE.explain)$('rlStat').innerHTML='<b>Takt '+LIVE.n+':</b> '+stateTxt(s)+' → <b>'+ACTS[a].n+'</b>'+(rnd?' (zufällig)':'');
+}
+var AUTO=false,autoT=null;
+function explainShow(inf,next,last){
+  var w=W(),h='';
+  if(inf){
+    var parts=[];
+    if(inf.fell)parts.push('Umfallen: −'+w.fall);
+    else{if(w.fwd)parts.push(fmt(inf.dz)+' cm × '+fmt(w.fwd));if(w.alive)parts.push('stehen +'+fmt(w.alive));if(w.one&&inf.one)parts.push('auf 1 Bein +'+fmt(w.one))}
+    var cls=inf.r>.05?'plus':inf.r<-.05?'minus':'zero';
+    h+='<h4>Was ist passiert?</h4><p>Nori hat „'+ACTS[inf.p.a].n+'“ gemacht. '+(inf.fell?'<b>Er ist umgefallen.</b>':(Math.abs(inf.dz)<.3?'Er ist kaum vorwärts gekommen.':'Er ist <b>'+fmt(inf.dz)+' cm</b> '+(inf.dz>0?'nach vorn':'zurück')+' gekommen.'))+'</p>';
+    h+='<div class="pts '+cls+'">'+(inf.r>0?'+':'')+fmt(inf.r)+' Punkte<small>'+(parts.join(', ')||'keine Punkte')+'</small></div>';
+    if(LIVE&&LIVE.learn){var d=inf.neu-inf.old;h+='<p>Tabelle, Lage „'+stateTxt(inf.p.s)+'“, Baustein „'+ACTS[inf.p.a].s+'“: <span class="val">'+f2(inf.old)+'</span> → <span class="val '+(d>0.005?'up':d<-0.005?'down':'')+'">'+f2(inf.neu)+' '+(d>0.005?'↑':d<-0.005?'↓':'')+'</span>. '+(inf.fell?'Diesen Baustein wählt Nori in dieser Lage jetzt seltener.':(Math.abs(d)<0.3?'Kaum verändert: So viel hatte Nori ungefähr erwartet.':d>0?'Besser als erwartet, der Wert steigt.':'Schlechter als erwartet, der Wert sinkt.'))+'</p>'}
+  }
+  if(next){
+    var q=Qs()[next.s],m=Math.max.apply(null,q);
+    h+='<div class="'+(inf?'sec':'')+'"><h4>Was macht Nori jetzt?</h4><p>Lage: <b>'+stateTxt(next.s)+'</b>. Er wählt <b>„'+ACTS[next.a].n+'“</b>, '+(next.rnd?'weil er diesmal <b>zufällig</b> etwas ausprobiert ('+Math.round(RL.eps*100)+' % Zufall).':(q.every(function(v){return v===0})?'aber nur geraten: Für diese Lage steht noch nichts in seiner Tabelle.':'weil dieser Baustein in der Tabelle den höchsten Wert hat (<span class="val">'+fmt(q[next.a])+'</span>).'))+'</p></div>';
+  }
+  if(last)h+='<div class="sec"><b>Versuch vorbei.</b> '+(inf&&inf.fell?'Tippe auf der Bühne auf „Nori aufstellen“ und probier es noch einmal.':'Nori hat alle Takte geschafft.')+'</div>';
+  else h+='<div class="exbtns"><button class="b main" id="exNext" type="button">Weiter</button><button class="b" id="exStop" type="button">Beenden</button><label><input type="checkbox" id="exAuto"'+(AUTO?' checked':'')+'> automatisch weiter</label></div>';
+  mode='ex';renderModes();info('Schritt für Schritt'+(LIVE?' · Takt '+(LIVE.n+(last?0:1)):''),h);
+  if(inf||next){var tb=document.createElement('div');tb.className='qwrap sec';tb.innerHTML='<table class="qt" id="rlQ"></table>';$('exB').appendChild(tb);drawQ(inf?{s:inf.p.s,a:inf.p.a}:null,next?next.s:null)}
+  if(!last&&AUTO){clearTimeout(autoT);autoT=setTimeout(exContinue,6000)}
+}
+function exContinue(){clearTimeout(autoT);if(!LIVE||!LIVE.paused)return;LIVE.paused=false;var f=LIVE.next;LIVE.next=null;var nb=$('exNext');if(nb)nb.disabled=true;if(f)f()}
+$('exB').addEventListener('click',function(e){
+  if(e.target.id==='exReveal'){revealCtl();return}
+  if(e.target.id==='exNext')exContinue();
+  else if(e.target.id==='exStop'){clearTimeout(autoT);if(LIVE){LIVE.explain=false;LIVE.paused=false;endLive(false)}mode='help';renderModes();renderInfo()}
+});
+$('exB').addEventListener('change',function(e){if(e.target.id==='exAuto'){AUTO=e.target.checked;clearTimeout(autoT);if(AUTO)autoT=setTimeout(exContinue,2500)}});
+function endLive(fell){
+  if(LIVE.park){var un0=LIVE.unknown;LIVE=null;renderRL();parkDriverEnded(fell,un0!=null);return}
+  var d=(rootZ()-LIVE.z0)*10,lm=LIVE.learn,n=LIVE.n;
+  if(LIVE.imit){var un=LIVE.unknown;IM.last={dist:Math.round(d),fell:fell,unknown:un!=null,n:n};saveIM();LIVE=null;renderRL();if(mode==='cmp'||mode==='demo')renderInfo();
+    if(!fell&&d>=30)mission('imit');
+    var t2=fell?'Umgefallen nach '+n+' Takten, '+Math.max(0,Math.round(d))+' cm. So hast du es mir wohl vorgemacht!':un!=null?'Hier weiß ich nicht weiter: „'+stateTxt(un)+'“ hast du mir nie gezeigt. '+Math.max(0,Math.round(d))+' cm geschafft.':Math.round(d)+' cm in '+n+' Takten, genau wie vorgemacht!';
+    setTimeout(function(){say(t2+(S.state==='fallen'?' Tippe auf „Nori aufstellen“.':''))},700);return}
+  if(lm)record({ret:LIVE.ret,dist:d,fell:fell});
+  LIVE=null;saveRL();renderRL();
+  var txt=fell?'Umgefallen nach '+n+' Takten, '+Math.max(0,Math.round(d))+' cm geschafft. '+(lm?'Die Strafe trage ich in meine Tabelle ein.':'Ich muss wohl noch üben.'):Math.round(d)+' cm in '+n+' Takten, ohne umzufallen!';
+  if(!lm&&!fell&&RL.task==='walk'&&d>=30)mission('rlwalk');
+  setTimeout(function(){say(txt+(S.state==='fallen'?' Tippe auf „Nori aufstellen“.':''))},700);
+}
+
+/* ---------- Gehirn: Hauptplatine, Schaltplan, Regelschleife ---------- */
+var NODES=[
+ {id:'cam',x:4,y:4,w:76,h:28,a:'Doppelkamera',b:'USB · 30 Bilder/s'},
+ {id:'imu',x:4,y:40,w:76,h:28,a:'Lage-Sensor',b:'IMU · I²C'},
+ {id:'feet',x:4,y:76,w:76,h:28,a:'Fußsensoren',b:'Druck links/rechts'},
+ {id:'akku',x:4,y:114,w:76,h:30,a:'Akku 7,4 V',b:'2S-LiPo im Rucksack'},
+ {id:'pi',x:118,y:4,w:104,h:40,a:'Hauptrechner',b:'Raspberry Pi 5 / Jetson'},
+ {id:'mcu',x:118,y:62,w:104,h:42,a:'Mikrocontroller',b:'ESP32 / STM32'},
+ {id:'dc',x:118,y:114,w:104,h:30,a:'Spannungswandler',b:'7,4 V → 5 V'},
+ {id:'srv',x:262,y:40,w:74,h:64,a:'15 Servos',b:'Bus · ID 1 bis 15'},
+ {id:'stop',x:262,y:114,w:74,h:30,a:'Not-Aus',b:'Watchdog'}
+];
+var EDGES=[
+ {id:'cam',d:'M80,18 H118',c:'d',l:'USB',lx:88,ly:15},
+ {id:'imu',d:'M80,54 H98 V74 H118',c:'d',l:'I²C',lx:84,ly:51},
+ {id:'feet',d:'M80,90 H118',c:'d',l:'Analog',lx:84,ly:87},
+ {id:'uart',d:'M170,44 V62',c:'d',l:'UART',lx:174,ly:56},
+ {id:'cmd',d:'M222,72 H262',c:'d',l:'Befehle',lx:226,ly:69},
+ {id:'fb',d:'M262,94 H222',c:'d fb',l:'Antwort',lx:226,ly:102},
+ {id:'p1',d:'M80,129 H118',c:'p',l:'7,4 V',lx:86,ly:126},
+ {id:'p2',d:'M170,114 V104',c:'p',l:'5 V',lx:174,ly:111},
+ {id:'p3',d:'M222,124 H240 V24 H222',c:'p',l:'5 V',lx:243,ly:30},
+ {id:'p4',d:'M42,144 V154 H299 V144',c:'p',l:'7,4 V direkt für die Servos',lx:120,ly:151},
+ {id:'p5',d:'M299,114 V104',c:'p',l:'',lx:0,ly:0}
+];
+var COMP={
+ cam:['Doppelkamera','sensor','Zwei Kameras im Abstand der Augen. Aus dem kleinen Unterschied zwischen beiden Bildern berechnet der Hauptrechner, wie weit etwas weg ist. Das heißt Stereo-Sehen.','Bilder sind riesige Datenmengen, etwa 30 pro Sekunde. Darum hängt die Kamera über USB am starken Hauptrechner und nicht am kleinen Mikrocontroller.',function(){return S.camTxt}],
+ imu:['Lage-Sensor (IMU)','sensor','Ein Chip wie der BNO055 oder MPU-6050. Er hat einen Beschleunigungs-Sensor (spürt, wo unten ist) und einen Kreisel-Sensor, auch Gyroskop genannt (spürt, wie schnell sich Nori dreht).','Er hängt über <b>I²C</b> am Mikrocontroller: zwei Drähte, einer gibt den Takt (SCL), über den anderen laufen die Daten (SDA). Gelesen wird mehrere hundert Mal pro Sekunde.',function(){return on('imu')?(S.onStand?'am Ständer':'Neigung '+Math.round(S.state==='ok'?0:S.tilt)+'°'):'nicht eingebaut'}],
+ feet:['Fußsensoren','sensor','Drucksensoren unter den Sohlen. Sie melden, ob ein Fuß den Boden berührt und wie viel Gewicht darauf lastet.','Sie liefern eine Spannung, die der Mikrocontroller mit seinem Analog-Digital-Wandler in eine Zahl umrechnet.',function(){return on('fuesse')?'links '+Math.round(S.fl*100)+' %, rechts '+Math.round(S.fr*100)+' %':'nicht eingebaut'}],
+ akku:['Akku 7,4 V (2S-LiPo)','power','Zwei Lithium-Polymer-Zellen mit je 3,7 V hintereinander ergeben 7,4 V (voll geladen 8,4 V). Er sitzt im Rucksack.','Die Servos hängen direkt am Akku, weil sie beim Laufen zusammen mehrere Ampere ziehen. LiPo-Akkus darf man nie ganz leer machen und nie beschädigen, sonst können sie heiß werden.',function(){return on('akku')?'eingebaut':'fehlt, Nori hat keinen Strom'}],
+ pi:['Hauptrechner','body','Ein kleiner Computer wie der Raspberry Pi 5 oder ein NVIDIA Jetson, der für KI gebaut ist. Er macht die schweren Aufgaben: Kamerabilder auswerten und das gelernte Modell fragen, was als Nächstes kommt.','Bei unserem Nori ist das Modell die Tabelle aus „Lernen“. Echte Roboter nutzen ein neuronales Netz. Der Hauptrechner läuft mit Linux und ist nicht auf die Millisekunde pünktlich. Darum gibt es noch einen zweiten Chip.',function(){return LIVE?(LIVE.imit?'macht nach, was du gezeigt hast':'fragt die Lern-Tabelle'):S.playing?'spielt Posen-Programm ab':'wartet'}],
+ mcu:['Mikrocontroller','body','Ein kleiner Chip wie ein ESP32 oder STM32. Er ist viel schwächer als der Hauptrechner, aber immer pünktlich. Er liest die Sensoren, schätzt die Lage und schickt den Servos ihre Winkel.','Mit dem Hauptrechner spricht er über <b>UART</b>, eine einfache serielle Leitung, oder über USB. Man kann es sich so merken: Der Hauptrechner denkt, der Mikrocontroller hat die Reflexe.',function(){return S.state==='fallen'?'Not-Aus ausgelöst':'Regelschleife läuft alle 20 ms'}],
+ dc:['Spannungswandler (Step-down)','power','Er macht aus den 7,4 V des Akkus saubere, gleichmäßige 5 V für Hauptrechner und Mikrocontroller.','Die Rechner bekommen einen eigenen Zweig. Wenn alle Servos gleichzeitig anziehen, bricht die Akku-Spannung kurz ein. Ohne Wandler würde der Rechner dabei abstürzen.',function(){return on('akku')?'5,0 V':'aus'}],
+ srv:['15 Servos','servo','Jedes Gelenk hat einen Servo: Motor, Getriebe und einen Winkelsensor in einem Gehäuse. Er fährt selbst auf den Winkel, den man ihm sagt.','Einfache Servos bekommen ein <b>PWM-Signal</b>. Nori nutzt <b>Bus-Servos</b>: Alle hängen an einer Leitung, jeder hat eine Nummer (ID) und meldet zurück: Winkel, Last, Temperatur und Strom. Mehr unter „Signale“.',function(){return 'Hüfte L '+Math.round(cur.hipL)+'°, R '+Math.round(cur.hipR)+'°, Knie L '+Math.round(cur.kneeL)+'°, R '+Math.round(cur.kneeR)+'°'}],
+ stop:['Not-Aus und Watchdog','power','Sitzt im Stromzweig der Servos und kann ihn sofort abschalten. Mehr unter „Sicherheit“.','',function(){return S.state==='fallen'?'<b style="color:#ff7b6b">ausgelöst, Servos stromlos</b>':'bereit'}]
+};
+var TYC={sensor:['Sensor','t-sensor'],power:['Strom','t-power'],body:['Rechner','t-body'],servo:['Servo','t-servo']};
+var PHASES=[
+ {t:'Sensoren lesen',n:['imu','feet','cam','srv'],e:['imu','feet','cam','fb']},
+ {t:'Lage schätzen',n:['mcu'],e:[]},
+ {t:'Aktion wählen',n:['pi'],e:['uart']},
+ {t:'Zielwinkel senden',n:['mcu','srv'],e:['cmd']}
+];
+var BR={run:false,ph:-1,t:0,n:0,sel:'mcu',walk:false,lt:0,seen:!!store.get('brain',0)},PH_T=.8;
+function drawBoard(){
+  var ph=BR.run&&BR.ph>=0?PHASES[BR.ph]:null,h='';
+  EDGES.forEach(function(e){h+='<path class="ed '+e.c+(ph&&ph.e.indexOf(e.id)>=0?' act':'')+'" d="'+e.d+'"/>';if(e.l)h+='<text class="lb" x="'+e.lx+'" y="'+e.ly+'">'+e.l+'</text>'});
+  NODES.forEach(function(n){var cl='nd'+(BR.sel===n.id?' sel':'')+(ph&&ph.n.indexOf(n.id)>=0?' act':'')+(n.id==='stop'&&S.state==='fallen'?' alarm':'');
+    h+='<g class="'+cl+'" data-n="'+n.id+'" role="button" tabindex="0" aria-label="'+n.a+'"><rect x="'+n.x+'" y="'+n.y+'" width="'+n.w+'" height="'+n.h+'" rx="6"/><text x="'+(n.x+n.w/2)+'" y="'+(n.y+n.h/2-1)+'" text-anchor="middle">'+n.a+'</text><text class="s" x="'+(n.x+n.w/2)+'" y="'+(n.y+n.h/2+9)+'" text-anchor="middle">'+n.b+'</text></g>'});
+  $('brd').innerHTML=h;
+}
+function compInfo(){var c=COMP[BR.sel],ty=TYC[c[1]];info(c[0],'<span class="chip '+ty[1]+'">'+ty[0]+'</span><p>'+c[2]+'</p>'+(c[3]?'<p>'+c[3]+'</p>':'')+'<p class="sec">Jetzt: <b id="compLive">'+c[4]()+'</b></p>')}
+function liveVals(){
+  var s=rlState(),ac=LIVE&&LIVE.pend?ACTS[LIVE.pend.a].n:S.playing?'Pose '+(S.pIdx+1)+' aus dem Posen-Programm':'nichts Neues, Haltung halten';
+  return [COMP.imu[4]()+', Füße '+(on('fuesse')?Math.round(S.fl*100)+' / '+Math.round(S.fr*100)+' %':'–')+', Servos melden Winkel und Last',
+    S.state==='fallen'?'Nori liegt! Not-Aus.':'Gewicht '+LEAN[Math.floor(s/9)]+', vorn '+SIDE[Math.floor(s/3)%3]+', gehoben '+SIDE[s%3],
+    ac,'Hüfte '+Math.round(tgt.hipL)+'° / '+Math.round(tgt.hipR)+'°, Knie '+Math.round(tgt.kneeL)+'° / '+Math.round(tgt.kneeR)+'°, Gewicht '+Math.round(tgt.lean)+'° …'];
+}
+function loopInfo(){
+  var v=liveVals(),D=['IMU, Fußsensoren und die Rückmeldung der Servos werden abgefragt.','Ein Filter mischt Kreisel und Beschleunigung (Komplementär- oder Kalman-Filter). So entsteht eine ruhige, genaue Lage.','Der Hauptrechner fragt das Modell: Was ist jetzt am besten? Bei uns ist das die Lern-Tabelle oder das Vorgemachte.','Der Mikrocontroller schickt allen Servos ihren neuen Zielwinkel.'];
+  info('Regelschleife','<ol class="loop">'+PHASES.map(function(p,i){return '<li id="lp'+i+'" class="'+(BR.run&&BR.ph===i?'on':'')+'"><b>'+(i+1)+'. '+p.t+'</b> '+D[i]+'<small id="lv'+i+'">'+v[i]+'</small></li>'}).join('')+'</ol><p>Ein Durchlauf dauert in echt nur <b>10 bis 20 ms</b>, also 50- bis 100-mal pro Sekunde. Hier läuft er in Zeitlupe. Ein Takt in „Lernen“ dauert 0,4 s, darin laufen bei einem echten Nori 20 bis 40 solcher Schleifen.</p>');
+}
+var SIGNAL=(function(){
+  function pulse(ms,lab,y){var x0=40,sc=12,w=ms*sc;return '<path d="M'+x0+','+(y+16)+' H'+(x0+8)+' V'+y+' H'+(x0+8+w)+' V'+(y+16)+' H'+(x0+8+240)+'" fill="none" style="stroke:var(--mint)" stroke-width="2"/><text x="0" y="'+(y+12)+'" font-size="10" style="fill:var(--ink)">'+ms.toString().replace('.',',')+' ms</text><text x="'+(x0+8+w+6)+'" y="'+(y+11)+'" font-size="10" style="fill:var(--muted)">'+lab+'</text>'}
+  return '<h4>PWM: ein Puls pro Servo</h4><p>Alle 20 ms bekommt ein einfacher Servo einen kurzen Puls. Die Länge des Pulses ist der Winkel:</p><svg viewBox="0 0 300 76" style="width:100%;max-width:340px;display:block" role="img" aria-label="PWM-Pulse 1, 1,5 und 2 Millisekunden">'+pulse(1,'ganz links',4)+pulse(1.5,'Mitte',28)+pulse(2,'ganz rechts',52)+'</svg><p style="color:var(--muted)">Dafür braucht jeder Servo eine eigene Leitung, und er sagt nichts zurück.</p><h4>Bus-Servos: alle an einer Leitung</h4><p>Der Mikrocontroller schickt kleine Nachrichten mit Nummer: <span class="val">„ID 3: fahre auf 22°“</span>. Der Servo antwortet: <span class="val">„ID 3: bin bei 21°, Last 30 %, 41 °C, 0,6 A“</span>. So merkt Nori, wenn ein Bein klemmt oder ein Motor zu heiß wird.</p><h4>Die anderen Leitungen</h4><ul><li><b>I²C</b>: zwei Drähte für langsame Sensoren wie die IMU.</li><li><b>UART</b>: einfache serielle Leitung zwischen Hauptrechner und Mikrocontroller.</li><li><b>USB</b>: schnell genug für Kamerabilder.</li></ul>';
+})();
+function safeInfo(){
+  var f=S.state==='fallen';
+  info('Sicherheit','<p class="'+(f?'':'')+'" style="color:'+(f?'#ff7b6b':'var(--mint)')+'"><b>'+(f?'Not-Aus ausgelöst: Nori liegt, die Servos sind stromlos.':'Alles in Ordnung.')+'</b></p><ol><li><b>Not-Aus beim Umfallen:</b> Meldet die IMU mehr als 45° Neigung, schaltet der Mikrocontroller den Servo-Strom ab. So zerbricht kein Getriebe und kein Finger wird eingeklemmt.</li><li><b>Strom- und Temperatur-Grenzen:</b> Bus-Servos melden Strom und Temperatur. Wird ein Servo zu heiß (etwa über 70 °C) oder zieht zu viel Strom, macht Nori Pause.</li><li><b>Watchdog:</b> Der Hauptrechner muss sich etwa alle 50 ms beim Mikrocontroller melden. Kommt nichts, ist er wohl abgestürzt, und Nori geht in eine sichere Haltung.</li><li><b>Akku-Wächter:</b> Unter etwa 3,3 V pro Zelle wird abgeschaltet, damit der LiPo-Akku nicht kaputtgeht.</li></ol><p class="sec">Probier es aus: Lass Nori unter „Testen“ umfallen und schau dann hier und auf den Not-Aus im Plan.</p>');
+}
+$('brd').addEventListener('click',function(e){var g=e.target.closest('[data-n]');if(!g)return;BR.sel=g.dataset.n;drawBoard();mode='comp';renderModes();renderInfo()});
+$('brd').addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.dataset&&e.target.dataset.n){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
+function setLoop(on_){if(on_&&!BR.seen){BR.seen=true;store.set('brain',1);updNext()}BR.run=on_;BR.ph=on_?0:-1;BR.t=0;$('bLoop').textContent=on_?'■ Anhalten':'▶ Regelschleife';drawBoard();if(on_){mode='loop';renderModes();renderInfo()}else if(mode==='loop')renderInfo()}
+$('bLoop').addEventListener('click',function(){setLoop(!BR.run);if(BR.run)say('So denkt Nori, in Zeitlupe. In echt geht das 50-mal pro Sekunde.')});
+function stopBrWalk(){if(!BR.walk)return;BR.walk=false;S.playing=false;poses=store.get('poses',[]);updPlay();updBr()}
+$('bBrWalk').addEventListener('click',function(){
+  if(BR.walk){stopBrWalk();return}
+  if(!legsReady()||busyRL())return;if(S.state!=='ok'){say('Stell mich erst wieder auf.');return}
+  wake();poses=EXAMPLE.map(function(p){return Object.assign({},p)});if(S.onStand)offStand();S.playing=true;S.pIdx=0;S.pT=0;S.pFrom=Object.assign({},tgt);BR.walk=true;updBr();
+  if(!BR.run)setLoop(true);say('Ich laufe. Schau, wie die Werte in der Regelschleife sich ändern.');
+});
+function updBr(){$('bBrWalk').textContent=BR.walk?'■ Stopp':'Laufen lassen';$('bBrWalk').disabled=!legsReady()||(busyRL()&&!BR.walk)}
+function stepBrain(rdt){
+  if(tab!=='brain')return;
+  if(BR.walk&&!S.playing)stopBrWalk();
+  var alarm=S.state==='fallen';if(alarm!==BR.alarm){BR.alarm=alarm;drawBoard();if(mode==='safe')renderInfo()}
+  if(BR.run){BR.t+=rdt;if(BR.t>=PH_T){BR.t=0;BR.ph=(BR.ph+1)%4;if(BR.ph===0)BR.n++;drawBoard();
+    if(mode==='loop'){var v=liveVals();for(var i=0;i<4;i++){var li=$('lp'+i);if(li){li.className=i===BR.ph?'on':'';$('lv'+i).textContent=v[i]}}}}}
+  if((BR.lt+=rdt)>.25){BR.lt=0;var cl=$('compLive');if(cl&&mode==='comp')cl.innerHTML=COMP[BR.sel][4]();
+    $('brStat').innerHTML=BR.run?'Schritt <b>'+(BR.ph+1)+'/4</b> · Durchlauf <b>'+BR.n+'</b>':'Tippe auf ein Bauteil.'}
+}
+
+/* ---------- Parcours ---------- */
+var STATIONS=[
+ {id:'wake',n:'Wecken',g:'Nori schläft. Weck ihn mit einem Klatschen.',move:false},
+ {id:'w30',n:'30 cm',g:'Lauf bis über die 30-cm-Linie, ohne umzufallen.',move:true,cm:30,lim:25},
+ {id:'w60',n:'60 cm',g:'Lauf bis über die 60-cm-Linie, ohne umzufallen.',move:true,cm:60,lim:35},
+ {id:'one',n:'Ein Bein',g:'Steh 3 Sekunden lang auf einem Bein.',move:true,one:3,lim:20},
+ {id:'sprint',n:'Sprint',g:'So weit wie möglich in 20 Sekunden. 30 cm = ★, 60 cm = ★★, 90 cm = ★★★.',move:true,sprint:true,lim:20},
+ {id:'dance',n:'Tanzen',g:'Tanz 8 Taktschläge lang zum Beat, ohne umzufallen. Jede Pose ist ein Tanzschritt.',move:false,dance:true,lim:30},
+ {id:'ball',n:'Fußball',g:'Lauf zum Ball und schieß ihn ins Tor.',move:true,ball:true,lim:30}
+];
+var DANCE=[
+ {lean:10,head:30,shL:150,shR:20,elL:20,elR:40,hipL:0,hipR:0,kneeL:0,kneeR:0},
+ {lean:-10,head:-30,shL:20,shR:150,elL:40,elR:20,hipL:0,hipR:0,kneeL:0,kneeR:0},
+ {lean:10,head:0,shL:90,shR:90,elL:0,elR:0,hipL:0,hipR:0,kneeL:0,kneeR:0},
+ {lean:-10,head:30,shL:170,shR:170,elL:10,elR:10,hipL:0,hipR:0,kneeL:0,kneeR:0},
+ {lean:0,head:-30,shL:60,shR:60,elL:90,elR:90,hipL:0,hipR:0,kneeL:0,kneeR:0},
+ {lean:0,head:0,shL:0,shR:0,elL:0,elR:0,hipL:0,hipR:0,kneeL:0,kneeR:0}
+];
+/* Ball und Tor */
+var BALL=new THREE.Group();scene.add(BALL);BALL.visible=false;
+mesh(new THREE.SphereGeometry(.1,18,14),mat(0xfafafa,{r:.5}),BALL);
+mesh(new THREE.SphereGeometry(.102,8,6),mat(0x23304a,{r:.6}),BALL).scale.set(.55,.55,.55);
+var GOALZ=4.2,GOALW=.75,bv={x:0,z:0},bPrev={L:V(0,0,0),R:V(0,0,0)},GOAL=new THREE.Group();scene.add(GOAL);GOAL.visible=false;
+[[-GOALW,0],[GOALW,0]].forEach(function(o){mesh(new THREE.CylinderGeometry(.03,.03,.5,8),mat(0xffffff),GOAL,V(o[0],.25,GOALZ))});
+mesh(new THREE.BoxGeometry(GOALW*2,.05,.05),mat(0xffffff),GOAL,V(0,.5,GOALZ));
+function resetBall(){BALL.position.set(0,.1,.85);BALL.rotation.set(0,0,0);bv.x=bv.z=0;BALL.userData.goal=false;BALL.userData.out=false}
+resetBall();
+function ballShow(){var v=step==='park'&&pkSel==='ball';if(BALL.visible!==v){BALL.visible=GOAL.visible=v;if(v)resetBall()}}
+function stepBall(dt){
+  ballShow();if(!BALL.visible)return;
+  ['L','R'].forEach(function(K){var f=footW(K,tmp),vz=(f.z-bPrev[K].z)/Math.max(dt,1e-3);
+    if(Math.hypot(f.x-BALL.position.x,f.z-BALL.position.z)<.19&&f.y<.3&&S.state==='ok'){var sp=Math.max(1.6,Math.min(4,vz*1.4));if(sp>bv.z||bv.z<.3){bv.z=sp;bv.x+=(BALL.position.x-f.x)*5}}
+    bPrev[K].copy(f)});
+  var k=Math.exp(-1.3*dt);bv.x*=k;bv.z*=k;BALL.position.x+=bv.x*dt;BALL.position.z+=bv.z*dt;BALL.rotation.x+=bv.z*dt*10;
+  if(!BALL.userData.goal&&BALL.position.z>=GOALZ){if(Math.abs(BALL.position.x)<GOALW)BALL.userData.goal=true;else BALL.userData.out=true}
+}
+
+var DRV={pose:'Posen',rl:'Belohnung',im:'Nachmachen'};
+var PKS=store.get('park',{});if(typeof PKS!=='object'||!PKS)PKS={};
+var PK=null,pkSel=store.get('pkSel','wake'),pkDrv=store.get('pkDrv','rl');
+function stInfo(id){return STATIONS.find(function(s){return s.id===id})}
+function starsOf(cm){return cm>=90?3:cm>=60?2:cm>=30?1:0}
+function stOk(id){var r=PKS[id];if(!r)return false;if(id==='sprint')return (r.best||0)>=30;return Object.keys(r).some(function(k){return r[k]==='ok'})}
+function renderPark(){
+  $('pkSt').innerHTML=STATIONS.map(function(s,i){var ok=stOk(s.id),sub=s.id==='sprint'?(PKS.sprint&&PKS.sprint.best!=null?'<span class="stars">'+'★'.repeat(starsOf(PKS.sprint.best))+'</span>'+(starsOf(PKS.sprint.best)?'':PKS.sprint.best+' cm'):'–'):ok?'✓ geschafft':'offen';
+    return '<button type="button" class="st'+(ok?' ok':'')+'" data-s="'+s.id+'" aria-pressed="'+(pkSel===s.id)+'">'+s.n+'<small>'+sub+'</small></button>'}).join('');
+  var st=stInfo(pkSel);
+  $('pkDrv').hidden=!st.move;
+  $('pkDrv').querySelectorAll('[data-d]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.d===pkDrv);b.disabled=!!PK});
+  $('pkSt').querySelectorAll('.st').forEach(function(b){b.disabled=!!PK});
+  $('bPark').textContent=PK?(PK.st==='wake'?'👏 Klatschen':'■ Abbrechen'):'▶ Start';
+  $('bPark').disabled=busyRL()&&!PK;
+  if(!PK)$('pkStat').innerHTML='<b>Station '+(STATIONS.indexOf(st)+1)+':</b> '+st.g;
+}
+$('pkSt').addEventListener('click',function(e){var b=e.target.closest('[data-s]');if(!b||PK)return;pkSel=b.dataset.s;store.set('pkSel',pkSel);renderPark();if(mode!=='score'){mode='station';renderModes()}renderInfo()});
+$('pkDrv').addEventListener('click',function(e){var b=e.target.closest('[data-d]');if(!b||PK)return;pkDrv=b.dataset.d;store.set('pkDrv',pkDrv);renderPark();if(mode==='station')renderInfo()});
+$('bPark').addEventListener('click',function(){
+  if(PK){if(PK.st==='wake')$('bClap').click();else parkStop(false);return}
+  if(busyRL())return;var st=stInfo(pkSel);
+  if(st.id==='wake'){
+    if(!on('ohren')){say('Ohne Ohren hört Nori kein Klatschen. Bau sie unter Schritt 1 ein.');return}
+    if(!S.onStand&&S.state!=='ok')standUp();S.asleep=true;PK={st:'wake'};renderPark();say('Pssst … Nori ist eingeschlafen. Tippe auf „Klatschen“!');return}
+  if(st.dance){
+    if(!on('akku')||!legsReady())return;
+    var my=store.get('poses',[]),stay=my.length>=3&&my.every(function(p){return Math.abs(p.hipL||0)<15&&Math.abs(p.hipR||0)<15&&(p.kneeL||0)<20&&(p.kneeR||0)<20});
+    if(S.state!=='ok')standUp();wake();epReset();syncSliders();
+    PK={st:'dance',drv:'pose',z0:rootZ(),t:0,beats:0,own:stay};poses=(stay?my:DANCE).map(function(p){return Object.assign({},p)});
+    S.playing=true;S.pIdx=0;S.pT=0;S.pFrom=Object.assign({},tgt);updPlay();renderPark();mode='station';renderModes();renderInfo();
+    say(stay?'Ich tanze deine Choreografie!':'Ich tanze mein Beispiel. Eigene Tänze baust du unter „Testen“ aus Posen, die auf der Stelle bleiben.');return}
+  if(st.ball)resetBall();
+  if(pkDrv==='im'&&!IM.steps){say('Du hast mir noch nichts vorgemacht. Das geht in Schritt 5.');return}
+  var ps=store.get('poses',[]);if(pkDrv==='pose'&&!ps.length){say('Du hast noch kein Posen-Programm. Speichere Posen in Schritt 2 oder lade dort das Beispiel.');return}
+  if(SPD<5){SPD=5;store.set('spd2',SPD);updCtl()}
+  wake();epReset();syncSliders();
+  PK={st:st.id,drv:pkDrv,z0:rootZ(),t:0,oneT:0,best:0,prevTask:RL.task,pi:0};
+  if(pkDrv==='pose'){poses=ps;S.playing=true;S.pIdx=0;S.pT=0;S.pFrom=Object.assign({},tgt);updPlay()}
+  else{RL.task=st.id==='one'?'one':'walk';startLive(false);LIVE.park=true;LIVE.max=st.ball?90:80;if(pkDrv==='im')LIVE.imit=true}
+  renderPark();mode='station';renderModes();renderInfo();say('Los! Station „'+st.n+'“ mit '+DRV[pkDrv]+'.');
+});
+function stepPark(dt){
+  if(!PK||PK.st==='wake'||PK.done)return;var st=stInfo(PK.st);
+  PK.t+=dt;var d=(rootZ()-PK.z0)*10;PK.best=Math.max(PK.best,d);
+  if(S.state==='ok'&&!S.onStand&&S.gL!==S.gR)PK.oneT+=dt;else PK.oneT=0;
+  $('pkStat').innerHTML='<b>'+st.n+'</b> mit '+DRV[PK.drv]+' · '+(st.one?'auf einem Bein <b>'+PK.oneT.toFixed(1).replace('.',',')+' s</b>':'<b>'+Math.max(0,Math.round(d))+' cm</b>')+' · Zeit '+Math.floor(PK.t)+' s';
+  if(S.state==='fallen'){parkFinish(false,'Umgefallen!');return}
+  if(st.dance){if(S.pIdx!==PK.pi){PK.pi=S.pIdx;PK.beats++;BR.beat=1}
+    $('pkStat').innerHTML='<b>♪ Tanzen</b> Taktschlag <b>'+PK.beats+'/8</b> · Pose <b>'+(S.pIdx+1)+'</b>'+(PK.own?' (deine Choreografie)':' (Beispiel-Tanz)');
+    if(PK.beats>=8)parkFinish(true,'Super getanzt, '+poses.length+' Posen!');else if(PK.t>=st.lim)parkFinish(false,'Zeit um.');return}
+  if(st.ball){var dd=Math.max(0,Math.round(BALL.position.z*10));$('pkStat').innerHTML='<b>⚽ Fußball</b> mit '+DRV[PK.drv]+' · Ball bei <b>'+dd+' cm</b> von 42 · Zeit '+Math.floor(PK.t)+' s';
+    if(BALL.userData.goal){parkFinish(true,'TOOOR!');return}
+    if(BALL.userData.out){parkFinish(false,'Daneben! Der Ball ist am Tor vorbei.');return}
+    if(PK.t>=st.lim){parkFinish(false,'Zeit um, der Ball ist nicht im Tor.');return}return}
+  if(st.cm&&d>=st.cm){parkFinish(true,'Linie geschafft!');return}
+  if(st.one&&PK.oneT>=st.one){parkFinish(true,'3 Sekunden auf einem Bein!');return}
+  if(PK.t>=st.lim){parkFinish(!!st.sprint,st.sprint?'Zeit um!':'Zeit um, das hat nicht gereicht.')}
+}
+function parkDriverEnded(fell,unknown){if(!PK||PK.done)return;var st=stInfo(PK.st);
+  if(fell)parkFinish(false,'Umgefallen!');else if(st.sprint)parkFinish(true,unknown?'Nori wusste nicht weiter.':'Fertig!');
+  else if(st.ball&&!BALL.userData.goal)parkFinish(false,unknown?'Nori war ratlos: Diese Lage hast du ihm nie vorgemacht.':'Nori hat aufgehört, bevor der Ball im Tor war.');
+  else parkFinish(false,unknown?'Nori war ratlos: Diese Lage hast du ihm nie vorgemacht.':'Nori hat aufgehört, bevor er es geschafft hat.')}
+function parkFinish(ok,why){
+  var p=PK;if(!p)return;p.done=true;var st=stInfo(p.st),d=Math.max(0,Math.round(PK.best||0));
+  if(LIVE){LIVE=null;renderRL()}if(S.playing){S.playing=false;poses=store.get('poses',[]);updPlay()}
+  if(p.prevTask){RL.task=p.prevTask;saveRL()}
+  var r=PKS[p.st]||(PKS[p.st]={});
+  if(p.st==='wake')r.clap='ok';
+  else if(st.dance){if(ok)r.pose='ok';else if(r.pose!=='ok')r.pose='fail'}
+  else if(st.sprint){r[p.drv]=d;if(r.best==null||d>r.best)r.best=d}
+  else if(r[p.drv]!=='ok')r[p.drv]=ok?'ok':'fail';
+  store.set('park',PKS);PK=null;
+  if(['wake','w30','w60','one'].every(stOk))mission('park');
+  if(ok&&p.st==='dance')mission('dance');if(ok&&p.st==='ball')mission('ball');if(p.st==='ball')resetBall();
+  var msg=st.sprint?why+' '+d+' cm mit '+DRV[p.drv]+(starsOf(d)?', '+'★'.repeat(starsOf(d)):'')+'.':(ok?'Geschafft! '+why:why+' Versuch es noch einmal oder wähle eine andere Steuerung.');
+  setTimeout(function(){say(msg+(S.state==='fallen'?' Tippe auf „Nori aufstellen“.':''))},300);
+  renderPark();$('pkStat').innerHTML=(ok?'✓ ':'✗ ')+msg;if(mode==='station'||mode==='score')renderInfo();updNext();
+}
+function parkStop(quiet){if(!PK)return;if(PK.st==='wake'){PK=null;S.asleep=false;renderPark();return}
+  PK.done=true;if(LIVE){LIVE=null;renderRL()}if(S.playing){S.playing=false;poses=store.get('poses',[]);updPlay()}if(PK.prevTask)RL.task=PK.prevTask;PK=null;resetBall();if(!quiet)say('Abgebrochen.');renderPark()}
+function stationInfo(){var st=stInfo(pkSel),r=PKS[pkSel]||{},i=STATIONS.indexOf(st);
+  var tips={wake:'Nori braucht dafür Ohren mit Mikrofonen und Strom.',w30:'Das Beispiel-Programm aus Schritt 2 schafft das. Probier auch, ob Belohnung und Nachmachen es können.',w60:'Hier zählt Ausdauer: Ein schiefer Schritt und Nori fällt. Wer läuft am saubersten?',one:'Laufen-Wissen hilft hier wenig. Übe in Schritt 4 die Aufgabe „Ein Bein“ oder programmiere eine Pose: Gewicht verlagern, dann ein Knie heben.',sprint:'Wer kommt in 20 Sekunden am weitesten? Vergleiche alle drei Steuerungen.',dance:'Tanzen ist Programmieren mit Rhythmus: Jede Pose ist ein Schritt, alle zusammen sind die Choreografie. Bau unter „Testen“ eigene Posen (Arme, Kopf, Gewicht verlagern) und speichere sie mit „+ Pose“. Bleiben die Füße dabei stehen, tanzt Nori deinen Tanz, sonst sein Beispiel.',ball:'Der Ball liegt vor Nori, das Tor steht 42 cm entfernt. Nori muss laufen und den Ball mit dem Fuß treffen. Welche Steuerung zielt am besten?'};
+  info('Station '+(i+1)+' · '+st.n,'<p><b>'+st.g+'</b></p><p>'+tips[st.id]+'</p>'+(st.move?'<p class="sec">Gewählte Steuerung: <b>'+DRV[pkDrv]+'</b>. '+(st.sprint?(r[pkDrv]!=null?'Bisher: '+r[pkDrv]+' cm.':'Noch nicht probiert.'):(r[pkDrv]==='ok'?'Damit schon geschafft ✓':r[pkDrv]==='fail'?'Damit bisher nicht geschafft.':'Damit noch nicht probiert.'))+'</p>':''))}
+function scoreInfo(){
+  var cell=function(v,sp){if(v==null)return '<td>–</td>';if(sp)return '<td'+(v>=30?' class="best"':'')+'>'+v+' cm</td>';return '<td'+(v==='ok'?' class="best"':'')+'>'+(v==='ok'?'✓':'✗')+'</td>'};
+  var rows=STATIONS.filter(function(s){return s.move||s.dance}).map(function(s){var r=PKS[s.id]||{};return '<tr><td>'+s.n+'</td>'+cell(r.pose,s.sprint)+cell(r.rl,s.sprint)+cell(r.im,s.sprint)+'</tr>'}).join('');
+  var n=STATIONS.filter(function(s){return stOk(s.id)}).length,sb=PKS.sprint&&PKS.sprint.best!=null?PKS.sprint.best:null;
+  info('Ergebnis '+n+'/'+STATIONS.length,'<p>Welche Steuerung schafft welche Station? Tanzen und Fußball sind für alle da: Wer lieber tanzt, programmiert Posen, wer lieber kickt, trainiert den Gang.</p><table class="qt" style="min-width:0;width:100%"><tr><th>Station</th><th>Posen</th><th>Belohnung</th><th>Nachmachen</th></tr>'+rows+'</table>'+(sb!=null?'<p class="sec">Sprint-Rekord: <b>'+sb+' cm</b> <span class="stars">'+'★'.repeat(starsOf(sb))+'</span></p>':'')+'<p style="color:var(--muted)">Posen sind fest programmiert, Belohnung hat Nori selbst herausgefunden, Nachmachen hat er von dir. Echte Roboter nutzen oft alles zusammen.</p>');
+}
+function updNext(){
+  var dn={build:PARTS.every(function(p){return p.on}),test:!!(done.wake&&done.stand),brain:!!BR.seen,learn:!!done.rlwalk,imit:!!done.imit,park:!!done.park};
+  var nx=STEPS.find(function(x){return !dn[x[0]]});
+  STEPS.forEach(function(x){var b=$(x[1]);b.classList.toggle('done',dn[x[0]]);b.classList.toggle('next',!!nx&&nx[0]===x[0]&&step!==x[0]&&!b.disabled)});
+}
+
+/* ---------- Film ---------- */
+function openFilm(){$('film').hidden=false;var v=$('filmV');v.preload='auto';try{v.currentTime=0;var p=v.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+$('bFilm').addEventListener('click',openFilm);
+$('bFilmX').addEventListener('click',function(){$('film').hidden=true;try{$('filmV').pause()}catch(e){}if(step==='build'&&!on('rumpf'))say('Schritt 1: Tippe unten auf „Rumpf“ und bau Nori zusammen. Zu jedem Teil steht oben im Fenster, was es kann.')});
+$('film').addEventListener('click',function(e){if(e.target===this)$('bFilmX').click()});
+
+/* ---------- Start ---------- */
+(function(){
+  /* Nori startet immer zerlegt: das Kind baut ihn selbst zusammen */
+  store.set('parts',[]);store.set('order',[]);var saved=[],ord=[];order=[];
+  ord.concat(saved).forEach(function(id){if(P[id]&&!P[id].on&&P[id].need.every(on))install(id,true)});
+  PARTS.forEach(function(p){if(saved.indexOf(p.id)>=0&&!p.on&&p.need.every(on))install(p.id,true)});
+  var nx=PARTS.find(canInstall);if(nx)sel=nx.id;
+  S.asleep=true;say('Oje, ich liege in Einzelteilen! Bau mich zusammen: Tippe unten auf „Rumpf“.');
+  renderBuild();renderModes();renderInfo();updMis();renderPoses();updPlay();drawFace('off',0,false);updNext();openFilm();
+})();
+
+function resize(){var r=canvas.getBoundingClientRect();renderer.setSize(Math.max(1,r.width),Math.max(1,r.height),false);cam.aspect=r.width/Math.max(1,r.height);cam.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(canvas);resize();
+
+var last=performance.now();
+function frame(now){
+  var rdt=Math.min(.05,(now-last)/1000),dt=rdt*(S.speed||1);last=now;
+  if(TR.left>0){trainStep();stepWraps(dt)}
+  else{stepRec(dt);stepPark(dt);stepBall(dt);stepLive(dt);stepPlay(dt);stepServos(dt);stepWraps(dt);applyJoints();physics(dt);sensors(dt)}
+  face(dt);updCom();updCam(dt);stepBrain(rdt);
+  if((frame.n=(frame.n||0)+1)%6===0)updUI();
+  renderer.render(scene,cam);requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__nuki={simEpisode:simEpisode,record:record,Qs:Qs,RL:RL,ACTS:ACTS,rlState:rlState,startLive:startLive,epReset:epReset,S:S,tgt:tgt,cur:cur,root:root,P:P,order:function(){return order},LIVE:function(){return LIVE},IM:function(){return IM},mission:mission,BR:BR,PK:function(){return PK},BALL:BALL,PKS:function(){return PKS},REC:function(){return REC},imAct:imAct};
+})();
+</script>
+
+</body></html>

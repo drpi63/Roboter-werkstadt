@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bauteile-Atlas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: Seite zum Lesen und Anklicken. Oben Bereiche und Bauteile, darunter die Karte des gewählten Bauteils mit Zeichnung, Aufbau zum Anklicken, Vorführung und Merksatz. */
+:root{--bg:#0e1625;--panel:#162238;--panel2:#1e2d47;--ink:#edf2fb;--muted:#97a6c2;--line:#2b3b59;--coral:#ff7a5c;--mint:#4fd1a1;--sensor:#5aa2ff;--motor:#ffa24a;--amber:#ffc857;--screen:#a68bff;
+  --f-display:"Fredoka","Baloo 2",system-ui,sans-serif;--f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;padding:12px max(12px,env(safe-area-inset-right,0px)) 28px max(12px,env(safe-area-inset-left,0px))}
+.wrap{max-width:960px;margin:0 auto;display:grid;gap:12px}
+.eyebrow{font:700 .7rem var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--coral);margin:0}
+h1{font:700 clamp(1.5rem,5vw,2.1rem) var(--f-display);margin:0;line-height:1.1}
+h2{font:700 1.35rem var(--f-display);margin:0;line-height:1.15}
+h3{font:600 .95rem var(--f-display);margin:0 0 4px;color:var(--amber)}
+p{margin:0 0 8px}
+.lede{color:var(--muted);max-width:64ch;margin:0}
+button{font:600 .82rem var(--f-display);color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:6px 11px;min-height:34px;cursor:pointer}
+button:focus-visible,input:focus-visible,svg [tabindex]:focus-visible{outline:2px solid var(--sensor);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--coral);border-color:var(--coral);color:#1a0d08}
+.cats{display:flex;gap:5px;flex-wrap:wrap}
+.cats button{border-radius:999px}
+.parts{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.parts button{text-align:left;display:grid;gap:1px;padding:7px 10px}
+.parts button small{font:400 .7rem var(--f-body);color:var(--muted)}
+.parts button[aria-pressed="true"] small{color:#4a1a10}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:12px;min-width:0}
+.chip{display:inline-block;font:700 .66rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;border-radius:99px;padding:1px 9px;color:#0e1625;margin-bottom:4px}
+.c-Antrieb{background:var(--mint)}.c-Sensoren{background:var(--sensor)}.c-Rechner{background:var(--screen)}.c-Strom{background:var(--amber)}
+.two{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:820px){.two{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
+.draw{background:var(--bg);border-radius:12px;padding:6px}
+.draw svg{display:block;width:100%;height:auto}
+.draw svg [data-s]{cursor:pointer}
+.draw svg [data-s] .b{fill:var(--panel2);stroke:var(--line);stroke-width:1.5;transition:fill .15s}
+.draw svg [data-s]:hover .b{fill:#27395a}
+.draw svg [data-s].sel .b{fill:#3a2a2a;stroke:var(--coral);stroke-width:2.5}
+.draw svg text{pointer-events:none;fill:var(--ink);font:600 9px var(--f-display)}
+.draw svg text.s{fill:var(--muted);font:400 7.5px var(--f-body)}
+.hint{font-size:.78rem;color:var(--muted);margin:4px 2px 0}
+.subs{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.subs button{padding:3px 9px;min-height:28px;font-size:.76rem}
+.detail{background:var(--bg);border-left:3px solid var(--coral);border-radius:8px;padding:8px 12px;margin-top:8px}
+.detail b.t{font:700 1rem var(--f-display);display:block;margin-bottom:2px}
+.demo{background:var(--bg);border-radius:12px;padding:10px 12px;display:grid;gap:8px}
+.demo h3{margin:0}
+.sl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center}
+.sl label{font-weight:700;font-size:.85rem}.sl output{font:600 .85rem var(--f-display);font-variant-numeric:tabular-nums;color:var(--mint)}
+.sl input{grid-column:1 / -1;width:100%;accent-color:var(--mint)}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px}
+.out div{background:var(--panel);border-radius:8px;padding:4px 9px}
+.out span{display:block;font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.out b{display:block;font:600 1rem var(--f-display);font-variant-numeric:tabular-nums}
+.note{font-size:.84rem;color:var(--muted);margin:0}
+.merk{background:linear-gradient(135deg,rgba(255,122,92,.18),rgba(255,200,87,.14));border:1px solid rgba(255,122,92,.4);border-radius:12px;padding:8px 12px;font-weight:700}
+.nori{font-size:.88rem;color:var(--muted)}.nori b{color:var(--ink)}
+ol.steps{margin:0;padding-left:1.2em}ol.steps li{margin-bottom:3px}
+.prog{font:600 .85rem var(--f-display);font-variant-numeric:tabular-nums}
+.led{display:inline-block;width:12px;height:12px;border-radius:50%;background:#33415f;vertical-align:-1px;margin-right:4px}.led.on{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+</style></head><body>
+<main class="wrap">
+  <header><p class="eyebrow">Alle Bauteile erklärt</p><h1>Bauteile-Atlas</h1>
+  <p class="lede">Hier steckt alles drin, was Nori und die anderen Roboter können. Wähle ein Bauteil. Dann siehst du, wie es aufgebaut ist, und kannst die einzelnen Teile anklicken. Bei vielen kannst du die Funktion gleich ausprobieren.</p></header>
+  <div class="cats" id="cats" role="group" aria-label="Bereich"></div>
+  <div class="parts" id="parts"></div>
+  <article class="card" id="card" aria-live="polite"></article>
+</main>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+function fx(v,d){return (Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toString().replace('.',',')}
+
+/* ---------- Zeichnungen ---------- */
+function gear(cx,cy,r,teeth,rot){var p='',n=teeth*2,i,a,rr;for(i=0;i<n;i++){a=(i/n)*Math.PI*2;rr=i%2?r-4:r+3;p+=(i?'L':'M')+(cx+Math.cos(a)*rr).toFixed(1)+' '+(cy+Math.sin(a)*rr).toFixed(1)}return '<path d="'+p+'Z" transform="rotate('+rot+' '+cx+' '+cy+')" class="b" style="fill:#2c4066"/>'}
+function servoSvg(ang){
+  var h='<svg viewBox="0 0 340 200" role="img" aria-label="Aufgeschnittener Servo: Motor, Getriebe, Poti, Platine">';
+  h+='<rect x="10" y="30" width="270" height="130" rx="12" style="fill:#0f1a2c;stroke:#2b3b59;stroke-width:2"/>';
+  h+='<g data-s="gehaeuse" tabindex="0" role="button" aria-label="Gehäuse"><rect class="b" x="14" y="34" width="262" height="10" rx="5"/><text x="145" y="42" text-anchor="middle" style="font-size:7px">Gehäuse</text></g>';
+  h+='<g data-s="motor" tabindex="0" role="button" aria-label="Motor"><rect class="b" x="22" y="56" width="62" height="50" rx="8"/><rect x="28" y="62" width="50" height="38" rx="5" style="fill:#ffa24a;opacity:.85;pointer-events:none"/><text x="53" y="83" text-anchor="middle" style="fill:#0e1625">Motor</text><text class="s" x="53" y="93" text-anchor="middle" style="fill:#3a2a10">M</text></g>';
+  h+='<g data-s="getriebe" tabindex="0" role="button" aria-label="Getriebe"><rect class="b" x="92" y="52" width="104" height="66" rx="8"/>'+gear(118,85,15,9,ang*-.3)+gear(150,78,10,7,ang*.45)+gear(176,92,12,8,ang*-.37)+'<text x="144" y="112" text-anchor="middle">Getriebe</text></g>';
+  h+='<g data-s="welle" tabindex="0" role="button" aria-label="Abtriebswelle und Hebel"><rect class="b" x="202" y="60" width="56" height="44" rx="8"/><circle cx="230" cy="82" r="9" style="fill:#97a6c2;pointer-events:none"/><text x="230" y="98" text-anchor="middle" style="font-size:7.5px">Welle</text></g>';
+  h+='<g transform="rotate('+(ang-90)+' 230 82)" style="pointer-events:none"><rect x="228" y="76" width="44" height="12" rx="6" style="fill:#ff7a5c"/><circle cx="230" cy="82" r="5" style="fill:#ffd2c6"/></g>';
+  h+='<g data-s="poti" tabindex="0" role="button" aria-label="Potentiometer"><rect class="b" x="202" y="112" width="56" height="36" rx="8"/><path d="M214 138 A16 16 0 0 1 246 138" fill="none" style="stroke:#5aa2ff;stroke-width:3;pointer-events:none"/><line x1="230" y1="138" x2="'+(230+14*Math.cos((180-ang)*Math.PI/180)).toFixed(1)+'" y2="'+(138-14*Math.sin((180-ang)*Math.PI/180)).toFixed(1)+'" style="stroke:#ffc857;stroke-width:2;pointer-events:none"/><text x="230" y="146" text-anchor="middle" style="font-size:7.5px">Poti</text></g>';
+  h+='<g data-s="platine" tabindex="0" role="button" aria-label="Steuerplatine"><rect class="b" x="22" y="120" width="170" height="30" rx="6" style="fill:#14503e"/><rect x="34" y="128" width="26" height="14" rx="2" style="fill:#0e1625;pointer-events:none"/><rect x="68" y="128" width="14" height="14" rx="2" style="fill:#0e1625;pointer-events:none"/><circle cx="96" cy="135" r="3" style="fill:#ffc857;pointer-events:none"/><text x="140" y="139" text-anchor="middle">Steuerplatine</text></g>';
+  h+='<g data-s="kabel" tabindex="0" role="button" aria-label="Anschlusskabel"><path d="M10 138 H0" style="stroke:#ff7a5c;stroke-width:3"/><path d="M10 145 H0" style="stroke:#ffc857;stroke-width:3"/><path d="M10 131 H0" style="stroke:#97a6c2;stroke-width:3"/><rect class="b" x="2" y="162" width="64" height="18" rx="6"/><text x="34" y="174" text-anchor="middle">3 Drähte</text></g>';
+  h+='<path d="M84 80 H92 M196 85 H202 M230 104 V112" style="stroke:#97a6c2;stroke-width:1.5;stroke-dasharray:3 2"/>';
+  h+='<path d="M60 120 V106 M150 120 V118" style="stroke:#4fd1a1;stroke-width:2"/>';
+  return h+'</svg>'}
+function mcuSvg(){
+  var h='<svg viewBox="0 0 340 210" role="img" aria-label="Innenleben eines Mikrocontrollers als Blockschaltbild">';
+  var pins='';for(var i=0;i<9;i++){var p=44+i*20;pins+='<rect x="30" y="'+p+'" width="14" height="6" rx="1"/><rect x="296" y="'+p+'" width="14" height="6" rx="1"/>'}for(var j=0;j<9;j++){var q=62+j*26;pins+='<rect x="'+q+'" y="14" width="6" height="14" rx="1"/><rect x="'+q+'" y="182" width="6" height="14" rx="1"/>'}
+  h+='<g style="fill:#97a6c2">'+pins+'</g>';
+  h+='<rect x="44" y="26" width="252" height="158" rx="10" style="fill:#0f1a2c;stroke:#2b3b59;stroke-width:2"/>';
+  function B(id,x,y,w,hh,t,s,col){return '<g data-s="'+id+'" tabindex="0" role="button" aria-label="'+t+'"><rect class="b" x="'+x+'" y="'+y+'" width="'+w+'" height="'+hh+'" rx="6" '+(col?'style="stroke:'+col+'"':'')+'/><text x="'+(x+w/2)+'" y="'+(y+hh/2-1)+'" text-anchor="middle">'+t+'</text><text class="s" x="'+(x+w/2)+'" y="'+(y+hh/2+9)+'" text-anchor="middle">'+s+'</text></g>'}
+  h+=B('cpu',54,36,92,50,'CPU-Kern','rechnet, Befehl für Befehl','#a68bff');
+  h+=B('takt',152,36,56,24,'Takt','Quarz');
+  h+=B('wdt',214,36,74,24,'Watchdog','Wächter');
+  h+=B('flash',152,64,66,22,'Flash','Programm');
+  h+=B('ram',224,64,64,22,'RAM','Arbeitsspeicher');
+  h+=B('timer',54,92,66,38,'Timer / PWM','zählt, pulst','#4fd1a1');
+  h+=B('adc',126,92,58,38,'ADC','misst Spannung','#5aa2ff');
+  h+=B('irq',190,92,98,38,'Interrupts','Alarm-Eingang','#ffa24a');
+  h+=B('gpio',54,136,112,40,'GPIO-Pins','an / aus, 3,3 V','#ffc857');
+  h+=B('bus',172,136,116,40,'UART · I²C · SPI','Leitungen zu anderen Chips','#ff7a5c');
+  h+='<path d="M100 86 V92 M180 60 V64 M100 86 H152" style="stroke:#97a6c2;stroke-width:1.4;stroke-dasharray:3 2"/>';
+  return h+'</svg>'}
+function pcSvg(){
+  var h='<svg viewBox="0 0 340 200" role="img" aria-label="Aufbau eines Hauptrechners (System on a Chip)">';
+  h+='<rect x="12" y="14" width="316" height="172" rx="12" style="fill:#14503e;stroke:#2b3b59;stroke-width:2"/>';
+  function B(id,x,y,w,hh,t,s,col){return '<g data-s="'+id+'" tabindex="0" role="button" aria-label="'+t+'"><rect class="b" x="'+x+'" y="'+y+'" width="'+w+'" height="'+hh+'" rx="6" '+(col?'style="stroke:'+col+'"':'')+'/><text x="'+(x+w/2)+'" y="'+(y+hh/2-1)+'" text-anchor="middle">'+t+'</text><text class="s" x="'+(x+w/2)+'" y="'+(y+hh/2+9)+'" text-anchor="middle">'+s+'</text></g>'}
+  h+='<rect x="24" y="28" width="170" height="100" rx="8" style="fill:#0f1a2c;stroke:#97a6c2;stroke-width:1.5"/><text class="s" x="109" y="40" text-anchor="middle">Prozessor-Chip (SoC)</text>';
+  h+=B('cores',32,46,74,34,'CPU-Kerne','4 Stück, 2,4 GHz','#a68bff');
+  h+=B('gpu',112,46,74,34,'GPU','viele kleine Rechner','#5aa2ff');
+  h+=B('cache',32,86,154,32,'Cache','schneller Zwischenspeicher');
+  h+=B('ramPc',204,28,112,38,'RAM','4 bis 16 GB','#ffa24a');
+  h+=B('store',204,72,112,30,'SD / SSD','Speicher, Linux','#4fd1a1');
+  h+=B('io',204,108,112,30,'USB · Kamera · WLAN','Schnittstellen','#ff7a5c');
+  h+=B('cool',24,138,170,38,'Kühlkörper / Lüfter','Chip wird heiß','#ffc857');
+  h+=B('pwr',204,144,112,32,'Stromeingang','5 V, bis 5 A');
+  return h+'</svg>'}
+
+/* ---------- Bauteile ---------- */
+var PARTS=[
+{id:'servo',cat:'Antrieb',n:'Servo',s:'Motor mit Winkel',svg:servoSvg,svgArg:90,
+ intro:'Ein Servo dreht eine Welle auf einen <b>genauen Winkel</b> und hält sie dort fest, auch wenn jemand daran drückt. Jedes Gelenk von Nori ist ein Servo. Ein einfacher Motor dreht dagegen einfach nur, bis man ihn abschaltet.',
+ subs:{
+  gehaeuse:['Gehäuse','Kunststoff oder Metall. Es hält alles zusammen und führt die Wärme ab. Metallgehäuse halten mehr aus und kühlen besser.'],
+  motor:['Gleichstrommotor','Ein kleiner Elektromotor. Er dreht schnell (mehrere tausend Umdrehungen pro Minute), hat aber wenig Kraft. Im Inneren drehen sich Spulen zwischen Magneten. Fließt Strom, entsteht ein Magnetfeld, das die Spule dreht. Strom andersherum, Drehung andersherum.'],
+  getriebe:['Getriebe','Mehrere Zahnräder hintereinander. Ein kleines Zahnrad treibt ein großes an: Die Drehzahl sinkt, die Kraft steigt. Bei 1 zu 200 dreht die Welle 200-mal langsamer, hat aber fast 200-mal mehr Kraft (abzüglich Reibung). So kann ein winziger Motor ein Bein bewegen.'],
+  welle:['Abtriebswelle und Hebel','Die Welle ragt aus dem Gehäuse und trägt den Hebel („Horn“), an dem das Bein oder der Arm festgeschraubt wird. Sie dreht sich meist nur 180° bis 270° weit, nicht ständig im Kreis.'],
+  poti:['Potentiometer (Winkelsensor)','Eine Widerstandsbahn mit einem Schleifer, der an der Welle sitzt. Je nach Winkel greift der Schleifer eine andere Spannung ab. So „weiß“ der Servo jederzeit, wo seine Welle steht. Bessere Servos nehmen statt des Potis einen Magnetsensor, der nicht verschleißt.'],
+  platine:['Steuerplatine','Das Gehirn des Servos. Sie liest das Signal von außen (Soll-Winkel), misst den Ist-Winkel am Poti, vergleicht beide und schaltet den Motor mit einer H-Brücke in die richtige Richtung. Bei Bus-Servos steckt ein kleiner Mikrocontroller darauf.'],
+  kabel:['Anschluss','Drei Drähte: Plus, Minus und Signal. Beim einfachen Servo kommt auf der Signalleitung der PWM-Puls an. Bus-Servos hängen mit demselben Kabel hintereinander an einer Leitung und haben eine Nummer (ID).']},
+ how:'<ol class="steps"><li><b>Soll:</b> Das Signal sagt, wohin die Welle soll. Eine Pulslänge von 1 ms heißt ganz links, 1,5 ms Mitte, 2 ms ganz rechts. Der Puls kommt alle 20 ms.</li><li><b>Ist:</b> Das Poti meldet, wo die Welle gerade steht.</li><li><b>Fehler:</b> Die Platine rechnet Soll minus Ist.</li><li><b>Motor:</b> Er dreht in die Richtung, die den Fehler kleiner macht, umso stärker, je größer der Fehler ist.</li><li><b>Ziel:</b> Ist der Fehler null, bleibt der Motor stehen. Wird die Welle weggedrückt, regelt er sofort gegen. Das nennt man <b>Regelkreis</b>.</li></ol>',
+ demo:'servo',
+ merk:'Ein Servo ist ein Motor, der ständig nachmisst, wo er ist, und sich korrigiert.',
+ nori:'<b>15 Servos</b> in Hüfte, Knie, Knöchel, Armen und Hals. Auf 0° bis 100° stellst du sie in „Testen“ mit den Reglern ein. Nori nutzt Bus-Servos, die auch Last und Temperatur zurückmelden.'},
+{id:'motor',cat:'Antrieb',n:'Getriebemotor',s:'Dreht im Kreis',svg:null,
+ intro:'Ein Getriebemotor ist ein Gleichstrommotor mit angebautem Getriebe. Er dreht ein Rad oder einen Greifer, bis man ihn stoppt. Im Gegensatz zum Servo kennt er keinen Winkel.',
+ subs:{
+  stator:['Magnete (Stator)','Feststehende Dauermagnete im Gehäuse. Sie erzeugen das Magnetfeld, in dem sich der Anker dreht.'],
+  anker:['Anker (Rotor)','Spulen aus Kupferdraht auf einem drehbaren Eisenkern. Wenn Strom durch die Spulen fließt, werden sie zu Magneten und werden von den festen Magneten angezogen und abgestoßen. Das ergibt die Drehung.'],
+  kommu:['Kommutator und Bürsten','Zwei Kohlebürsten schleifen auf einem geteilten Kupferring. Sie schalten den Strom bei jeder halben Drehung um, damit der Anker nicht stehen bleibt, sondern weiter schiebt. Bei bürstenlosen Motoren macht das die Elektronik.'],
+  getr:['Getriebe','Zahnräder, die die schnelle Drehung des Motors verlangsamen und dabei die Kraft vergrößern, genau wie beim Servo.'],
+  hbr:['H-Brücke','Vier Schalter aus Transistoren, mit denen der Mikrocontroller die Richtung des Stroms umdreht. Ohne sie könnte der Motor nur in eine Richtung laufen.']},
+ how:'<p>Mehr Spannung heißt mehr Drehzahl. Der Mikrocontroller schaltet die Spannung mit <b>PWM</b> blitzschnell an und aus. Ist sie 70 % der Zeit an, dreht der Motor mit etwa 70 % der Höchstdrehzahl. Mit der H-Brücke wechselt er die Drehrichtung.</p>',
+ demo:'motor',
+ merk:'Getriebe tauschen Geschwindigkeit gegen Kraft.',
+ nori:'<b>2 Getriebemotoren</b> in den Greifhänden. Sie drehen, bis der Kraftsensor in den Fingern Widerstand spürt.'},
+{id:'mcu',cat:'Rechner',n:'Mikrocontroller',s:'Der Reflex-Chip',svg:mcuSvg,
+ intro:'Ein Mikrocontroller (ESP32, STM32) ist ein <b>kompletter kleiner Computer auf einem einzigen Chip</b>: Rechenwerk, Speicher und Anschlüsse. Er ist langsamer als ein PC, dafür pünktlich auf die Mikrosekunde und braucht winzig wenig Strom.',
+ subs:{
+  cpu:['CPU-Kern','Das Rechenwerk. Es holt einen Befehl aus dem Speicher, versteht ihn und führt ihn aus, zum Beispiel „addiere 1“ oder „schalte Pin an“. Dann kommt der nächste. Ein ESP32 hat zwei Kerne mit bis zu 240 MHz. Intern hat die CPU <b>Register</b>, das sind winzige Zwischenspeicher, und ein <b>Rechenwerk (ALU)</b> für Plus, Minus, Vergleichen.'],
+  takt:['Takt (Quarz)','Ein Quarzkristall schwingt millionenfach pro Sekunde und gibt den Takt vor. Bei jedem Takt macht der Chip einen kleinen Schritt. 240 MHz sind 240 Millionen Takte pro Sekunde. Ohne Takt stünde alles still.'],
+  wdt:['Watchdog','Ein Wächter-Zähler. Das Programm muss ihn regelmäßig zurücksetzen („ich lebe noch“). Tut es das nicht, weil es hängt, startet der Watchdog den Chip neu. Das ist wichtig, wenn ein Roboter nicht abstürzen darf.'],
+  flash:['Flash-Speicher','Hier steht dein Programm. Er behält seinen Inhalt, auch wenn der Strom aus ist, aber man kann ihn nur langsam beschreiben. Größe: etwa 0,5 bis 4 Megabyte.'],
+  ram:['RAM','Der Arbeitsspeicher für Zahlen, die sich ständig ändern, etwa der aktuelle Winkel. Er ist schnell, vergisst aber alles beim Ausschalten. Größe: etwa 0,1 bis 0,5 Megabyte.'],
+  timer:['Timer und PWM','Zähler, die Takte mitzählen, ohne die CPU zu belasten. Damit erzeugt der Chip auf die Mikrosekunde genaue Pulse, zum Beispiel die 1 bis 2 ms für einen Servo, oder die PWM für einen Motor.'],
+  adc:['ADC (Analog-Digital-Wandler)','Die Welt ist analog (Spannungen), der Chip digital (Zahlen). Der ADC misst eine Spannung von 0 bis 3,3 V und macht eine Zahl daraus. Bei 12 Bit sind es 4096 Stufen. So werden Drucksensoren oder Lichtsensoren lesbar.'],
+  irq:['Interrupts','Ein Alarm-Eingang. Kommt ein Signal (zum Beispiel „Roboter kippt!“), unterbricht der Chip sofort, was er tut, erledigt das Wichtige und macht danach weiter. Dadurch reagiert er in Mikrosekunden.'],
+  gpio:['GPIO-Pins','Die Beinchen des Chips. Jeder kann Ausgang sein (an = 3,3 V, aus = 0 V, etwa für eine LED) oder Eingang (liest, ob ein Taster gedrückt ist). Der Name heißt „General Purpose Input/Output“.'],
+  bus:['UART, I²C, SPI','Drei Arten, mit anderen Chips zu reden. <b>UART</b>: zwei Leitungen, jeder spricht für sich (zum Hauptrechner). <b>I²C</b>: zwei Leitungen für viele Chips, jeder hat eine Adresse (Lage-Sensor). <b>SPI</b>: schnelle Leitung (Display).']},
+ how:'<p>Dein Programm besteht aus ganz einfachen Befehlen. Der Chip arbeitet sie in einem festen Dreischritt ab:</p><ol class="steps"><li><b>Holen:</b> den nächsten Befehl aus dem Flash lesen. Ein Zähler (Programmzähler) merkt sich, wo man ist.</li><li><b>Entschlüsseln:</b> verstehen, was der Befehl bedeutet.</li><li><b>Ausführen:</b> rechnen oder einen Pin schalten. Dann zählt der Programmzähler weiter.</li></ol><p>Das passiert millionenfach pro Sekunde. Probier es unten Schritt für Schritt aus.</p>',
+ demo:'mcu',
+ merk:'Ein Mikrocontroller macht immer nur einen kleinen Schritt, aber 240 Millionen Mal pro Sekunde.',
+ nori:'Er ist der <b>Reflex-Chip</b> in Noris Bauch. Alle 20 ms liest er IMU und Füße, schätzt die Lage und schickt allen Servos neue Winkel. Siehst du in Schritt 3 „Gehirn“.'},
+{id:'pc',cat:'Rechner',n:'Hauptrechner',s:'Der Denker',svg:pcSvg,
+ intro:'Der Hauptrechner (Raspberry Pi 5, NVIDIA Jetson) ist ein <b>richtiger kleiner PC</b> mit Linux. Er wertet Kamerabilder aus und führt das gelernte Modell aus, die schweren Aufgaben, bei denen es auf Rechenkraft ankommt.',
+ subs:{
+  cores:['CPU-Kerne','Vier schnelle Rechenkerne, die gleichzeitig verschiedene Programme bearbeiten. Sie takten mit etwa 2,4 GHz, zehnmal schneller als ein Mikrocontroller. Dafür brauchen sie mehr Strom (etwa 5 bis 15 Watt statt 0,1 Watt).'],
+  gpu:['GPU','Ursprünglich für Computerspiele. Sie hat Hunderte bis Tausende winzige Rechenwerke, die dieselbe Rechnung gleichzeitig auf vielen Zahlen machen. Genau das braucht auch ein neuronales Netz und die Bildverarbeitung.'],
+  cache:['Cache','Ein kleiner, sehr schneller Zwischenspeicher direkt im Chip. Daten, die oft gebraucht werden, liegen dort bereit, damit die CPU nicht auf den langsameren RAM warten muss.'],
+  ramPc:['RAM','Mehrere Gigabyte Arbeitsspeicher für Programme, Kamerabilder und das Modell. Er ist 10 000-mal größer als beim Mikrocontroller.'],
+  store:['SD-Karte oder SSD','Der Massenspeicher mit dem Betriebssystem (Linux) und allen Programmen. Er ist riesig (Gigabyte), aber langsam.'],
+  io:['Schnittstellen','USB für Kameras und Maus, Kamera-Anschluss für Bilder, WLAN und Netzwerk, UART für die Verbindung zum Mikrocontroller.'],
+  cool:['Kühlung','Rechnen erzeugt Wärme. Ohne Kühlkörper oder Lüfter drosselt der Chip seine Geschwindigkeit, damit er nicht überhitzt.'],
+  pwr:['Stromeingang','Der Rechner braucht stabile 5 Volt und bei Last bis zu 5 Ampere. Darum hat Nori einen eigenen Spannungswandler nur für ihn.']},
+ how:'<p>Ein Betriebssystem (Linux) verteilt die Rechenzeit auf viele Programme gleichzeitig. Das ist bequem, aber <b>nicht auf die Millisekunde pünktlich</b>: Manchmal kommt ein anderes Programm dazwischen. Deshalb übernimmt ein Mikrocontroller die zeitkritischen Reflexe, und der Hauptrechner gibt ihm nur Anweisungen wie „geh nach vorn“.</p>',
+ demo:null,
+ merk:'Der Hauptrechner ist stark, aber nicht pünktlich. Der Mikrocontroller ist schwach, aber pünktlich. Zusammen sind sie ein gutes Team.',
+ nori:'Er führt Noris <b>Lern-Tabelle</b> aus und wertet die zwei Kameras aus.'},
+{id:'imu',cat:'Sensoren',n:'Lage-Sensor (IMU)',s:'Wo ist oben?',svg:null,
+ intro:'Die IMU (Inertial Measurement Unit) spürt, wie Nori geneigt ist und wie schnell er sich dreht, ähnlich wie das Gleichgewichtsorgan in deinem Ohr.',
+ subs:{
+  acc:['Beschleunigungssensor','Im Chip hängt eine winzige Masse an Federn aus Silizium. Wird der Chip beschleunigt oder von der Schwerkraft gezogen, bewegt sich die Masse. Zwei Kondensatorplatten messen den Abstand. Weil die Schwerkraft immer nach unten zieht, erkennt der Sensor, wo unten ist.'],
+  gyro:['Kreiselsensor (Gyroskop)','Eine winzige Struktur schwingt hin und her. Wird der Chip gedreht, lenkt die Coriolis-Kraft die Schwingung zur Seite ab. Daraus wird die Drehgeschwindigkeit berechnet. Er merkt Drehungen sofort, aber der Fehler wächst mit der Zeit (Drift).'],
+  filt:['Filter','Der Beschleunigungssensor ist langfristig genau, aber zittrig. Der Kreisel ist kurzfristig genau, aber er driftet. Ein <b>Komplementärfilter</b> oder <b>Kalman-Filter</b> mischt beide und liefert eine saubere Neigung.'],
+  i2c:['I²C-Anschluss','Zwei Drähte zum Mikrocontroller, über die er die Werte mehrere hundert Mal pro Sekunde abfragt.']},
+ how:'<p>Liegt der Sensor flach, zieht die Schwerkraft nur nach unten (Z-Achse). Kippt er, verteilt sich die Schwerkraft auf zwei Achsen. Aus dem Verhältnis berechnet man den Winkel: <b>Winkel = atan2(x, z)</b>.</p>',
+ demo:'imu',merk:'Die IMU nutzt die Schwerkraft als Kompass nach unten.',
+ nori:'Sie sitzt in der Brust. Ab 45° Neigung löst der Not-Aus aus.'},
+{id:'cam',cat:'Sensoren',n:'Doppelkamera',s:'Räumlich sehen',svg:null,
+ intro:'Zwei Kameras im Abstand der Augen. Aus den zwei Bildern kann Nori berechnen, wie weit etwas entfernt ist, genau wie du mit zwei Augen.',
+ subs:{
+  lens:['Linse','Bündelt das Licht und bildet die Umgebung scharf auf dem Bildsensor ab.'],
+  sens:['Bildsensor (CMOS)','Ein Raster aus Millionen Pixeln. Jeder Pixel ist eine lichtempfindliche Diode: Je mehr Licht, desto mehr Ladung. Davor sitzt ein Farbfilter (rot, grün, blau), damit der Chip Farben unterscheidet.'],
+  stereo:['Stereo-Sehen','Ein Gegenstand erscheint im linken und rechten Bild an leicht verschobener Stelle. Je näher er ist, desto größer die Verschiebung. Aus der Verschiebung (Disparität) folgt die Entfernung.'],
+  link:['Verbindung','Bilder sind riesige Datenmengen (30 Bilder pro Sekunde). Darum hängen die Kameras per USB oder Kamera-Kabel am Hauptrechner.']},
+ how:'<p><b>Entfernung = Brennweite × Augenabstand ÷ Verschiebung.</b> Probier es mit dem Regler aus.</p>',
+ demo:'cam',merk:'Zwei Augen sehen Tiefe, weil nahe Dinge im linken und rechten Bild weiter auseinanderliegen.',
+ nori:'Zwei Kameras auf der Stirn. Sie erkennen den Baustein und seine Entfernung.'},
+{id:'mic',cat:'Sensoren',n:'Mikrofone',s:'Richtung hören',svg:null,
+ intro:'In den Kopfhörer-Ohren sitzen zwei Mikrofone. Weil der Schall zum näheren Ohr ein winziges bisschen früher kommt, kann Nori die Richtung hören.',
+ subs:{
+  mem:['Membran','Eine hauchdünne Folie. Schall bringt sie zum Schwingen.'],
+  kond:['Kondensator','Hinter der Membran liegt eine feste Platte. Schwingt die Membran, ändert sich der Abstand und damit die elektrische Ladung. Das wird ein elektrisches Signal.'],
+  adc2:['Verstärker und Wandler','Das Signal ist winzig. Ein Verstärker macht es größer, der ADC macht Zahlen daraus, etwa 16 000-mal pro Sekunde.']},
+ how:'<p>Schall braucht für 1 Meter etwa 3 Millisekunden. Bei 15 cm Abstand zwischen den Ohren ist der größte Laufzeitunterschied nur etwa 0,44 ms. Aus diesem Unterschied berechnet Nori den Winkel.</p>',
+ demo:'mic',merk:'Wer zuerst hört, sitzt näher an der Quelle.',
+ nori:'In den Ohren. Ein Klatschen weckt Nori auf.'},
+{id:'force',cat:'Sensoren',n:'Kraftsensor',s:'Druck fühlen',svg:null,
+ intro:'Eine dünne Folie unter den Sohlen und in den Fingern. Je fester man drückt, desto kleiner wird ihr Widerstand.',
+ subs:{
+  fol:['Sensorfolie','Eine leitfähige Schicht mit winzigen Teilchen. Wird sie gedrückt, berühren sich mehr Teilchen und der Strom fließt leichter.'],
+  div:['Spannungsteiler','Der Widerstand lässt sich nicht direkt lesen. Darum schaltet man ihn mit einem festen Widerstand in Reihe. Dazwischen entsteht eine Spannung, die sich mit dem Druck ändert.'],
+  adc3:['ADC','Der Mikrocontroller wandelt die Spannung in eine Zahl um.']},
+ how:'<p>Druck → kleinerer Widerstand → höhere Spannung → größere Zahl. Probier es aus.</p>',
+ demo:'force',merk:'Mehr Druck, weniger Widerstand, mehr Spannung.',
+ nori:'In den Füßen: So weiß Nori, auf welchem Bein er steht.'},
+{id:'sonar',cat:'Sensoren',n:'Abstandssensor',s:'Ultraschall-Echo',svg:null,
+ intro:'Wie eine Fledermaus: Der Sensor schickt einen Ton, den du nicht hörst (40 000 Hertz), und misst, wann das Echo zurückkommt.',
+ subs:{
+  tx:['Sender','Ein Piezo-Kristall, der unter Spannung schwingt und den Ton aussendet.'],
+  rx:['Empfänger','Ein zweiter Kristall, der das Echo in ein elektrisches Signal verwandelt.'],
+  tim:['Stoppuhr','Der Mikrocontroller misst die Zeit zwischen Senden und Empfang.']},
+ how:'<p><b>Entfernung = Zeit × Schallgeschwindigkeit ÷ 2</b>, denn der Ton läuft hin und zurück. Schall legt 343 Meter pro Sekunde zurück.</p>',
+ demo:'sonar',merk:'Der Ton läuft hin und zurück, darum teilt man durch zwei.',
+ nori:'Bei Bolli und im Baukasten. Dort warnt er vor Hindernissen.'},
+{id:'line',cat:'Sensoren',n:'Linien- und Lichtsensor',s:'Hell oder dunkel',svg:null,
+ intro:'Eine Infrarot-LED leuchtet auf den Boden, ein Fototransistor misst, wie viel Licht zurückkommt. Helle Fläche reflektiert viel, schwarze Linie fast nichts.',
+ subs:{
+  led:['Infrarot-LED','Leuchtet mit Licht, das wir nicht sehen, aber der Sensor schon. So stört Tageslicht weniger.'],
+  ft:['Fototransistor','Lässt mehr Strom durch, je mehr Licht ihn trifft.'],
+  adc4:['ADC','Aus der Spannung wird eine Zahl. Ein Schwellenwert entscheidet: Linie oder nicht.']},
+ how:'<p>Zwei Sensoren nebeneinander. Sieht nur der linke die Linie, liegt sie links, und der Roboter lenkt nach links.</p>',
+ demo:'line',merk:'Dunkel schluckt Licht, hell wirft es zurück.',
+ nori:'Im Baukasten für die Aufgabe „Linie folgen“.'},
+{id:'akku',cat:'Strom',n:'Akku (LiPo)',s:'Der Energiespeicher',svg:null,
+ intro:'Ein Lithium-Polymer-Akku speichert Strom auf kleinstem Raum. Zwei Zellen hintereinander („2S“) liefern 7,4 Volt.',
+ subs:{
+  an:['Minuspol (Anode)','Besteht meist aus Graphit. Beim Laden wandern Lithium-Ionen hierher und werden zwischen den Graphitschichten eingelagert.'],
+  ka:['Pluspol (Kathode)','Ein Lithium-Metalloxid. Beim Entladen wandern die Ionen von der Anode zu hier zurück, und die Elektronen nehmen den Weg durch den Roboter. Das ist der Strom.'],
+  el:['Elektrolyt und Trennschicht','Eine Flüssigkeit oder ein Gel, durch das nur die Ionen wandern. Eine dünne Folie (Separator) verhindert, dass Plus und Minus sich berühren, sonst gibt es einen Kurzschluss.'],
+  sch:['Schutzschaltung','Überwacht Spannung und Strom jeder Zelle. LiPos darf man nicht tiefentladen (unter etwa 3,3 V pro Zelle), nicht überladen und nicht beschädigen, sonst können sie heiß werden oder brennen.']},
+ how:'<p>Jede Zelle hat 3,7 V (voll 4,2 V). In Reihe addiert sich die Spannung. Die Kapazität in mAh sagt, wie lange er hält: 1000 mAh können eine Stunde lang 1 Ampere liefern.</p>',
+ demo:'akku',merk:'Zellen in Reihe geben mehr Spannung, Zellen parallel mehr Ausdauer.',
+ nori:'Im Rucksack. Er ist schwer und zieht den Schwerpunkt nach hinten.'},
+{id:'dc',cat:'Strom',n:'Spannungswandler',s:'Von 7,4 auf 5 Volt',svg:null,
+ intro:'Rechner brauchen 5 Volt, der Akku liefert 7,4. Der Step-down-Wandler macht daraus sauber 5 Volt, und das fast ohne Verlust.',
+ subs:{
+  sw:['Schalter (Transistor)','Schaltet 100 000- bis 500 000-mal pro Sekunde den Strom an und aus.'],
+  coil:['Spule','Speichert beim Einschalten Energie im Magnetfeld und gibt sie beim Ausschalten weiter, so wie ein Schwungrad.'],
+  dio:['Diode','Lässt den Strom nur in eine Richtung durch und schließt den Kreis, wenn der Schalter aus ist.'],
+  cap:['Kondensator','Ein kleiner Speicher, der die Pulse zu einer glatten Gleichspannung ausgleicht.']},
+ how:'<p>Die mittlere Spannung ist das <b>Tastverhältnis</b> mal Eingangsspannung. Für 5 V aus 7,4 V ist der Schalter 68 % der Zeit an. Ein einfacher Linearregler würde den Rest als Hitze verbraten, ein Schaltregler schafft über 90 % Wirkungsgrad.</p>',
+ demo:'dc',merk:'Schnell ein- und ausschalten ist effizienter als Spannung wegzuheizen.',
+ nori:'Er versorgt Hauptrechner und Mikrocontroller. Die Servos hängen direkt am Akku.'},
+{id:'disp',cat:'Rechner',n:'Display',s:'Noris Gesicht',svg:null,
+ intro:'Noris Gesicht ist ein kleiner Bildschirm. Die Augen sind gezeichnete Formen, die der Mikrocontroller aufs Display schickt.',
+ subs:{
+  pix:['Pixel','Winzige Leuchtpunkte in Reihen und Spalten. Bei OLED leuchtet jeder Pixel selbst, schwarz ist wirklich aus. Ein 128 × 64 Display hat 8192 Pixel.'],
+  ctrl:['Display-Controller','Ein kleiner Chip im Display, der die Pixel zeilenweise ansteuert und sich das Bild merkt.'],
+  spi:['SPI-Leitung','Über die schnelle SPI-Leitung schickt der Mikrocontroller das Bild, Pixel für Pixel.']},
+ how:'<p>Für „Blinzeln“ zeichnet der Chip erst offene, dann halbe, dann geschlossene Augen in schneller Folge. Fertig ist die Animation, wie bei einem Daumenkino.</p>',
+ demo:null,merk:'Ein Gesicht ist nur Programm: Formen zeichnen und im richtigen Takt wechseln.',
+ nori:'Nori zeigt hier Freude, Müdigkeit und Staunen.'}
+];
+var CATS=['Alle','Antrieb','Sensoren','Rechner','Strom'];
+
+/* ---------- Vorführungen ---------- */
+var DEMOS={
+ motor:{t:'Getriebe ausprobieren',sl:[{k:'r',l:'Übersetzung 1 zu …',min:1,max:300,st:1,v:100}],
+  calc:function(v){var rpm=12000/v.r,nm=0.002*v.r*0.7,g=nm/0.05/9.81*1000;return [['Motor',' 12 000 U/min'],['Welle',fx(rpm,rpm<10?1:0)+' U/min'],['Kraft',fx(nm,2)+' Nm'],['Hebt am 5-cm-Hebel',fx(g,0)+' g']]},
+  note:'Ein winziger Motor (0,002 Nm) wird durch das Getriebe richtig kräftig, aber langsamer.'},
+ imu:{t:'Neigung messen',sl:[{k:'a',l:'Neigung',min:-90,max:90,st:1,v:20,u:'°'}],
+  calc:function(v){var a=v.a*Math.PI/180,x=Math.sin(a),z=Math.cos(a);return [['x-Achse',fx(x,2)+' g'],['z-Achse',fx(z,2)+' g'],['Winkel aus atan2',fx(Math.atan2(x,z)*180/Math.PI,0)+'°']]},
+  note:'1 g ist die Schwerkraft. Je schiefer, desto mehr wandert sie von z nach x.'},
+ cam:{t:'Entfernung aus zwei Bildern',sl:[{k:'z',l:'Gegenstand ist … cm weg',min:20,max:300,st:5,v:60,u:' cm'}],
+  calc:function(v){var d=700*6/v.z;return [['Augenabstand','6 cm'],['Verschiebung',fx(d,0)+' Pixel'],['Daraus berechnet',fx(700*6/d,0)+' cm']]},
+  note:'Bei 60 cm liegt der Gegenstand im rechten Bild 70 Pixel weiter links als im linken. Je weiter weg, desto kleiner die Verschiebung. Weit entfernte Dinge kann man darum ungenau messen.'},
+ mic:{t:'Richtung aus Laufzeit',sl:[{k:'w',l:'Schall kommt aus Richtung',min:-90,max:90,st:1,v:30,u:'°'}],
+  calc:function(v){var dt=0.15*Math.sin(v.w*Math.PI/180)/343*1e6;return [['Zeitunterschied',fx(Math.abs(dt),0)+' µs'],['Zuerst hört',dt>5?'rechtes Ohr':dt<-5?'linkes Ohr':'beide gleich']]},
+  note:'0° ist genau vorne. 1 µs ist eine Millionstel Sekunde.'},
+ force:{t:'Druck zu Zahl',sl:[{k:'f',l:'Druck',min:0,max:20,st:1,v:5,u:' N'}],
+  calc:function(v){var r=v.f<=0?1e6:Math.min(1e6,100e3/Math.pow(v.f,1.1));var u=3.3*10e3/(10e3+r);return [['Folie',r>=1e6?'sehr hoch':fx(r/1000,0)+' kΩ'],['Spannung',fx(u,2)+' V'],['ADC-Zahl',fx(u/3.3*4095,0)]]},
+  note:'Die Werte sind nur grob: Echte Folien unterscheiden sich stark.'},
+ sonar:{t:'Echo-Zeit',sl:[{k:'d',l:'Hindernis in',min:5,max:200,st:5,v:50,u:' cm'}],
+  calc:function(v){var t=2*v.d/100/343*1e6;return [['Echo nach',fx(t,0)+' µs'],['Das sind',fx(t/1000,2)+' ms'],['Rückrechnung',fx(t*1e-6*343/2*100,0)+' cm']]},
+  note:'Je weiter weg, desto später das Echo. Bei 2 Metern sind es nur 11,7 Millisekunden.'},
+ line:{t:'Zwei Augen am Boden',sl:[{k:'o',l:'Linie liegt … mm neben der Mitte',min:-20,max:20,st:1,v:-8,u:' mm'}],
+  calc:function(v){function r(x){return Math.abs(x-v.o)<6?5:90}var L=r(-8),R=r(8),a=function(x){return Math.round(x/100*4095)};return [['Linker Sensor',a(L)+(L<50?' (dunkel)':' (hell)')],['Rechter Sensor',a(R)+(R<50?' (dunkel)':' (hell)')],['Roboter lenkt',L<50&&R>50?'nach links':R<50&&L>50?'nach rechts':'geradeaus']]},
+  note:'Dunkel reflektiert wenig Licht, darum ist die Zahl klein.'},
+ akku:{t:'Zellen in Reihe',sl:[{k:'n',l:'Zellen hintereinander',min:1,max:4,st:1,v:2,u:'S'}],
+  calc:function(v){return [['Spannung',fx(v.n*3.7,1)+' V'],['Voll geladen',fx(v.n*4.2,1)+' V'],['Leer bei',fx(v.n*3.3,1)+' V'],['Name',v.n+'S-LiPo']]},
+  note:'Nori nutzt 2S. Mehr Zellen heißt mehr Spannung, aber auch mehr Gewicht.'},
+ dc:{t:'Tastverhältnis',sl:[{k:'p',l:'Schalter ist an',min:10,max:100,st:1,v:68,u:' %'}],
+  calc:function(v){var u=7.4*v.p/100;return [['Eingang','7,4 V'],['Ausgang im Mittel',fx(u,1)+' V'],['Ziel 5 V',Math.abs(u-5)<0.15?'erreicht ✓':u<5?'zu wenig':'zu viel']]},
+  note:'Stell 68 % ein, dann kommen 5 V heraus.'}
+};
+
+/* ---------- Anzeige ---------- */
+var cat='Alle',sel='servo',sub={},demoState={};
+var servo={tgt:90,ang:90,raf:0};
+var mc={pc:0,phase:0,A:0,led:false,auto:null};
+var PROG=['LED einschalten','A = 3','A = A − 1','Wenn A > 0: springe zu Zeile 3','LED ausschalten','Springe zu Zeile 1'];
+function part(){return PARTS.filter(function(p){return p.id===sel})[0]}
+function renderNav(){
+  $('cats').innerHTML=CATS.map(function(c){return '<button type="button" data-c="'+c+'" aria-pressed="'+(cat===c)+'">'+c+'</button>'}).join('');
+  $('parts').innerHTML=PARTS.filter(function(p){return cat==='Alle'||p.cat===cat}).map(function(p){return '<button type="button" data-p="'+p.id+'" aria-pressed="'+(sel===p.id)+'">'+p.n+'<small>'+p.s+'</small></button>'}).join('');
+}
+function renderCard(){
+  var p=part(),keys=Object.keys(p.subs),cur=sub[p.id]||keys[0];sub[p.id]=cur;
+  var h='<div><span class="chip c-'+p.cat+'">'+p.cat+'</span><h2>'+p.n+'</h2></div><p>'+p.intro+'</p>';
+  h+='<div class="two"><div>';
+  if(p.svg){h+='<div class="draw" id="draw">'+p.svg(p.svgArg||0)+'</div><p class="hint">Tippe auf ein Teil in der Zeichnung.</p>'}
+  else h+='<h3>Aus diesen Teilen besteht es</h3>';
+  h+='<div class="subs">'+keys.map(function(k){return '<button type="button" data-s="'+k+'" aria-pressed="'+(k===cur)+'">'+p.subs[k][0]+'</button>'}).join('')+'</div>';
+  h+='<div class="detail" id="detail"><b class="t">'+p.subs[cur][0]+'</b>'+p.subs[cur][1]+'</div></div>';
+  h+='<div><h3>So funktioniert es</h3><div>'+p.how+'</div>';
+  if(p.demo)h+='<div class="demo" id="demo"></div>';
+  h+='</div></div><div class="merk">💡 '+p.merk+'</div><p class="nori"><b>In Nori:</b> '+p.nori+'</p>';
+  $('card').innerHTML=h;
+  markSvg();if(p.demo)renderDemo();
+}
+function markSvg(){var d=$('draw');if(!d)return;var cur=sub[sel];d.querySelectorAll('[data-s]').forEach(function(g){g.classList.toggle('sel',g.getAttribute('data-s')===cur)})}
+function pickSub(k){var p=part();if(!p.subs[k])return;sub[p.id]=k;var det=$('detail');det.innerHTML='<b class="t">'+p.subs[k][0]+'</b>'+p.subs[k][1];
+  $('card').querySelectorAll('.subs [data-s]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-s')===k)});markSvg()}
+$('cats').addEventListener('click',function(e){var b=e.target.closest('[data-c]');if(!b)return;cat=b.dataset.c;renderNav()});
+$('parts').addEventListener('click',function(e){var b=e.target.closest('[data-p]');if(!b)return;stopDemos();sel=b.dataset.p;renderNav();renderCard();$('card').scrollIntoView({behavior:'smooth',block:'start'})});
+$('card').addEventListener('click',function(e){var b=e.target.closest('[data-s]');if(b)pickSub(b.dataset.s)});
+$('card').addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.getAttribute&&e.target.getAttribute('data-s')&&e.target.tagName!=='BUTTON'){e.preventDefault();pickSub(e.target.getAttribute('data-s'))}});
+
+/* ---------- Vorführung: allgemein ---------- */
+function renderDemo(){
+  var p=part(),el=$('demo');if(!el)return;
+  if(p.demo==='servo'){servoDemo(el);return}
+  if(p.demo==='mcu'){mcuDemo(el);return}
+  var D=DEMOS[p.demo];if(!D)return;
+  var st=demoState[p.demo]||(demoState[p.demo]={});
+  var h='<h3>'+D.t+'</h3>';
+  D.sl.forEach(function(s){var v=st[s.k]!=null?st[s.k]:s.v;h+='<div class="sl"><label for="d_'+s.k+'">'+s.l+'</label><output id="o_'+s.k+'">'+v+(s.u||'')+'</output><input type="range" id="d_'+s.k+'" data-k="'+s.k+'" min="'+s.min+'" max="'+s.max+'" step="'+s.st+'" value="'+v+'"></div>'});
+  h+='<div class="out" id="dout"></div><p class="note">'+D.note+'</p>';el.innerHTML=h;calcDemo();
+}
+function calcDemo(){var p=part(),D=DEMOS[p.demo];if(!D)return;var st=demoState[p.demo]||{},v={};D.sl.forEach(function(s){v[s.k]=+(st[s.k]!=null?st[s.k]:s.v)});
+  $('dout').innerHTML=D.calc(v).map(function(r){return '<div><span>'+r[0]+'</span><b>'+r[1]+'</b></div>'}).join('')}
+$('card').addEventListener('input',function(e){var t=e.target,p=part();
+  if(t.id==='srvP'){servo.tgt=(+t.value-1)*180;$('srvPo').textContent=fx(+t.value,2)+' ms';servoKick();return}
+  if(!t.dataset.k||!DEMOS[p.demo])return;var st=demoState[p.demo]||(demoState[p.demo]={});st[t.dataset.k]=t.value;
+  var s=DEMOS[p.demo].sl.filter(function(x){return x.k===t.dataset.k})[0];$('o_'+t.dataset.k).textContent=t.value+(s.u||'');calcDemo()});
+
+/* ---------- Vorführung: Servo ---------- */
+function servoDemo(el){
+  el.innerHTML='<h3>Servo ausprobieren</h3><div class="sl"><label for="srvP">Pulslänge vom Signal</label><output id="srvPo">'+fx(1+servo.tgt/180,2)+' ms</output><input type="range" id="srvP" min="1" max="2" step="0.05" value="'+(1+servo.tgt/180)+'"></div><div class="out" id="srvOut"></div><p class="note">Schieb den Regler: Die Welle (rot) fährt zum Soll. Das gelbe Poti folgt. Der Motor arbeitet, bis der Fehler null ist.</p>';
+  servoUpd(0);
+}
+function servoKick(){if(!servo.raf)servo.raf=requestAnimationFrame(servoLoop)}
+var sLast=0;
+function servoLoop(t){servo.raf=0;var dt=Math.min(.05,(t-sLast)/1000||.016);sLast=t;if(sel!=='servo'){return}
+  var err=servo.tgt-servo.ang,drive=Math.max(-1,Math.min(1,err/40)),sp=360*drive;servo.ang+=sp*dt;
+  if(Math.abs(servo.tgt-servo.ang)<.3){servo.ang=servo.tgt;drive=0}
+  servoUpd(drive);if(drive!==0)servo.raf=requestAnimationFrame(servoLoop)}
+function servoUpd(drive){var d=$('draw');if(d&&sel==='servo'){var cur=sub.servo;d.innerHTML=servoSvg(servo.ang);markSvg()}
+  var o=$('srvOut');if(o)o.innerHTML='<div><span>Soll</span><b>'+fx(servo.tgt,0)+'°</b></div><div><span>Ist (Poti)</span><b>'+fx(servo.ang,0)+'°</b></div><div><span>Fehler</span><b>'+fx(servo.tgt-servo.ang,0)+'°</b></div><div><span>Motor</span><b>'+(Math.abs(drive)<.02?'aus':(drive>0?'→ ':'← ')+Math.round(Math.abs(drive)*100)+' %')+'</b></div>'}
+
+/* ---------- Vorführung: Mikrocontroller ---------- */
+function mcuDemo(el){
+  el.innerHTML='<h3>Ein Programm Schritt für Schritt</h3><ol class="steps" id="mcProg" style="margin:0"></ol><div class="out" id="mcOut"></div><div class="subs"><button type="button" id="mcStep">▶ Ein Takt weiter</button><button type="button" id="mcAuto" aria-pressed="false">Automatisch</button><button type="button" id="mcReset">Von vorn</button></div><p class="note">Pro Befehl braucht der Chip drei Takte: Holen, Entschlüsseln, Ausführen. A ist ein Register, ein kleiner Zwischenspeicher in der CPU.</p>';
+  mcuUpd();
+}
+var PH=['Holen','Entschlüsseln','Ausführen'];
+function mcuStep(){
+  if(mc.phase<2){mc.phase++}
+  else{var i=mc.pc;
+    if(i===0){mc.led=true;mc.pc=1}else if(i===1){mc.A=3;mc.pc=2}else if(i===2){mc.A--;mc.pc=3}
+    else if(i===3){mc.pc=mc.A>0?2:4}else if(i===4){mc.led=false;mc.pc=5}else{mc.pc=0}
+    mc.phase=0}
+  mcuUpd()}
+function mcuUpd(){var l=$('mcProg');if(!l)return;
+  l.innerHTML=PROG.map(function(t,i){return '<li'+(i===mc.pc?' style="color:#ffc857;font-weight:700"':'')+'>'+t+'</li>'}).join('');
+  $('mcOut').innerHTML='<div><span>Programmzähler</span><b>Zeile '+(mc.pc+1)+'</b></div><div><span>Gerade</span><b>'+PH[mc.phase]+'</b></div><div><span>Register A</span><b>'+mc.A+'</b></div><div><span>Pin 13 (LED)</span><b><i class="led'+(mc.led?' on':'')+'"></i>'+(mc.led?'an':'aus')+'</b></div>';
+  var b=$('mcAuto');if(b)b.setAttribute('aria-pressed',!!mc.auto)}
+$('card').addEventListener('click',function(e){var id=e.target.id;
+  if(id==='mcStep')mcuStep();
+  else if(id==='mcReset'){mc.pc=0;mc.phase=0;mc.A=0;mc.led=false;mcuUpd()}
+  else if(id==='mcAuto'){if(mc.auto){clearInterval(mc.auto);mc.auto=null}else mc.auto=setInterval(mcuStep,650);mcuUpd()}});
+function stopDemos(){if(mc.auto){clearInterval(mc.auto);mc.auto=null}}
+renderNav();renderCard();
+})();
+</script></body></html>

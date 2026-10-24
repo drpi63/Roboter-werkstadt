@@ -1,0 +1,640 @@
+<!doctype html><html lang="de" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Roboter-Baukasten</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: Schritt 1 Bauen, Schritt 2 Aufgabe, Schritt 3 Ausprobieren. Auf dem Handy alles untereinander, auf dem Desktop Arena links und Steuerung rechts. */
+:root{
+  --bg:#eceff2; --surface:#ffffff; --surface-2:#e3e8ed; --ink:#1b2430; --ink-2:#566474; --line:#cfd6de;
+  --accent:#d9480f; --on-accent:#ffffff; --path:#1971c2; --ok:#2b8a3e; --ok-bg:#d3f0da; --bad:#c92a2a; --bad-bg:#fbdcdc;
+  --wall:#7a8794; --track:#1b2430; --lamp:#f59f00; --grid:rgba(27,36,48,.06);
+  --f-display:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161b; --surface:#1b2128; --surface-2:#252d36; --ink:#e8edf2; --ink-2:#9aa8b6; --line:#333d48;
+    --accent:#ff8a4c; --on-accent:#1a1006; --path:#74c0fc; --ok:#69db7c; --ok-bg:#1f4a2c; --bad:#ff8787; --bad-bg:#4a2323;
+    --wall:#5d6a77; --track:#c5ced8; --lamp:#ffd43b; --grid:rgba(232,237,242,.05);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161b; --surface:#1b2128; --surface-2:#252d36; --ink:#e8edf2; --ink-2:#9aa8b6; --line:#333d48;
+  --accent:#ff8a4c; --on-accent:#1a1006; --path:#74c0fc; --ok:#69db7c; --ok-bg:#1f4a2c; --bad:#ff8787; --bad-bg:#4a2323;
+  --wall:#5d6a77; --track:#c5ced8; --lamp:#ffd43b; --grid:rgba(232,237,242,.05);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.55;
+  padding-block:28px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1000px;margin:0 auto}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,7vw,46px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,4.5vw,28px);line-height:1.15;margin:0 0 6px;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:17px;margin:0 0 8px}
+p{margin:0 0 10px}
+.lede{max-width:58ch;font-size:17px;color:var(--ink-2);margin:0 0 6px}
+.small{font-size:14px;color:var(--ink-2)}
+.step{margin-top:30px}
+.step .no{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 4px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
+.build{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media (min-width:820px){.build{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:start}}
+.parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.ghead{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin:4px 0 6px}
+button{font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:hover{border-color:var(--ink-2)}
+button:active{transform:scale(.98)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--path);outline-offset:2px}
+button:disabled{opacity:.5;cursor:default}
+.part{text-align:left;display:grid;gap:2px;align-content:start}
+.part .nm{font-weight:500;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 8px;align-items:baseline;min-width:0}
+.part .bp{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap}
+.part .ds{font-size:13px;color:var(--ink-2);line-height:1.4}
+.part[aria-pressed="true"]{border-color:var(--accent);background:var(--surface-2)}
+.part[aria-pressed="true"] .bp{color:var(--accent)}
+.meter{display:flex;gap:4px;margin:6px 0 4px}
+.meter i{flex:1;height:10px;border-radius:3px;background:var(--surface-2)}
+.meter i.on{background:var(--accent)}
+.bmsg{font-size:14px;min-height:1.5em;margin:0}
+.bmsg.err{color:var(--bad)}
+#preview{display:block;width:100%;max-width:240px;height:auto;margin:0 auto 8px}
+.sit{font-family:var(--f-mono);font-size:13px;background:var(--surface-2);border-radius:8px;padding:8px 10px;margin:0;font-variant-numeric:tabular-nums}
+.missions{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.mis{text-align:left;display:grid;gap:2px}
+.mis b{font-weight:500}
+.mis span{font-size:13px;color:var(--ink-2);line-height:1.4}
+.mis[aria-pressed="true"]{border-color:var(--accent);background:var(--surface-2)}
+.need{margin:10px 0 0;font-size:15px;border-left:4px solid var(--ok);padding:4px 0 4px 10px}
+.need.miss{border-left-color:var(--accent)}
+.play{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media (min-width:860px){.play{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+#arena{display:block;width:100%;aspect-ratio:1/1;max-width:100%;border-radius:10px;background:var(--surface-2);touch-action:manipulation}
+.status{margin:10px 0 0;min-height:3em;font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.stat{background:var(--surface-2);border-radius:8px;padding:8px 10px;min-width:0}
+.stat span{display:block;font-size:12px;color:var(--ink-2)}
+.stat b{display:block;font-family:var(--f-mono);font-weight:500;font-size:19px;font-variant-numeric:tabular-nums}
+.tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;background:var(--surface-2);border-radius:12px;padding:4px;margin-bottom:12px}
+.tabs button{border:none;background:none;border-radius:9px;font-weight:500}
+.tabs button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+button.main{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:500}
+.sl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;margin-bottom:12px}
+.sl label{font-weight:500}
+.sl output{font-family:var(--f-mono);font-size:14px;font-variant-numeric:tabular-nums}
+.sl input{grid-column:1 / -1;width:100%;accent-color:var(--accent)}
+.sl small{grid-column:1 / -1;color:var(--ink-2);font-size:13px}
+.cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.rules{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.rules li{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;background:var(--surface-2);border-radius:10px;padding:8px 10px}
+@media (min-width:480px){.rules li{grid-template-columns:minmax(0,1fr) auto;align-items:center}}
+.rules .when{font-size:14px}
+.rules .when b{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:500;margin-right:6px}
+.acts{display:grid;grid-template-columns:repeat(3,minmax(64px,1fr));gap:4px}
+.acts button{padding:6px 4px;min-height:40px;font-size:14px;display:grid;gap:0;line-height:1.2;text-align:center}
+.acts button small{font-family:var(--f-mono);font-size:11px;color:var(--ink-2)}
+.acts button[aria-pressed="true"]{border-color:var(--accent);background:var(--surface)}
+.acts button.best{border-color:var(--ok);background:var(--ok-bg)}
+.acts button.ro{cursor:default}
+.acts button.ro:active{transform:none}
+#curve{display:block;width:100%;height:auto;margin-bottom:12px}
+.tasks{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.tasks li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.tasks label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:15px}
+.tasks input{accent-color:var(--accent);margin-top:4px;width:18px;height:18px;flex:none}
+.tasks .hint{display:block;margin-top:4px;font-size:14px;color:var(--ink-2)}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 22px;margin:0}
+.terms dt{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.terms dd{margin:0;color:var(--ink-2);font-size:15px}
+.foot{margin-top:28px;font-size:13px;color:var(--ink-2);max-width:72ch}
+.foot a{color:var(--path)}
+.nuki{display:grid;gap:2px;margin-top:18px;background:var(--surface);border:2px solid var(--accent);border-radius:14px;padding:12px 16px;color:var(--ink);text-decoration:none}
+.nuki b{font-family:var(--f-display);font-size:20px}
+.nuki span:last-child{color:var(--ink-2);font-size:15px}
+.nuki:hover{background:var(--surface-2)}
+.nuki .no{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+@media (prefers-reduced-motion:reduce){button:active{transform:none}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style id="werkstatt-look">
+:root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+  --bg:#0e1625;--surface:#162238;--surface-2:#1e2d47;--ink:#edf2fb;--ink-2:#97a6c2;--line:#2b3b59;
+  --accent:#ff7a5c;--on-accent:#1a0d08;--path:#5aa2ff;--ok:#4fd1a1;--ok-bg:#1f3d39;--bad:#ff7a5c;--bad-bg:#4a2323;
+  --goal:#4fd1a1;--goal-bg:#1f3d39;--wall:#5d6a77;--track:#c6cfdd;--lamp:#ffc857;--grid:transparent;
+  --f-display:"Fredoka","Baloo 2",system-ui,sans-serif;--f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark}
+body{background-image:none!important;background-color:var(--bg)!important;font-size:14px}
+h1,h2,h3{font-family:var(--f-display)}
+.eyebrow,.no{color:var(--accent)!important}
+button{border-radius:9px;min-height:34px!important;padding:5px 10px!important;font-size:.85rem;font-family:var(--f-display);font-weight:600;background:var(--surface-2);border-color:var(--line)!important;border-width:1px!important}
+button.main,.btns .main{background:var(--accent)!important;border-color:var(--accent)!important;color:var(--on-accent)!important}
+.box,.stage,.panel,.tasks li,.nuki,.roberta{border-radius:14px!important}
+.wrap{padding-bottom:12px}
+</style>
+
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">Bauen, ausprobieren, lernen lassen</p>
+    <h1>Roboter-Baukasten</h1>
+    <p class="lede">Stell dir aus Motoren und Sensoren einen Roboter zusammen. Gib ihm eine Aufgabe. Dann programmierst du ihn selbst oder lässt ihn durch Belohnung von allein lernen.</p>
+  </header>
+
+  <a class="nuki" href="#" onclick="parent.postMessage({go:'nori'},'*');return false">
+    <span class="no">Neu: Zweibeiner</span>
+    <b>Nori-Werkstatt</b>
+    <span>Bau den kleinen Roboter Nori in 3D aus 14 Teilen zusammen, steuere seine 15 Servos, lies seine Sensoren ab und bring ihm das Laufen bei.</span>
+  </a>
+
+  <section class="step" aria-labelledby="h-s1">
+    <p class="no">Schritt 1</p>
+    <h2 id="h-s1">Roboter bauen</h2>
+    <p class="small">Dein Bausatz hat 9 Baupunkte. Jedes Teil kostet Punkte. Wähle genau einen Motor und so viele Sensoren, wie hineinpassen.</p>
+    <div class="build">
+      <div class="box">
+        <p class="ghead">Motoren</p>
+        <div class="parts" id="pMotor"></div>
+        <p class="ghead" style="margin-top:12px">Sensoren</p>
+        <div class="parts" id="pSensor"></div>
+        <div class="meter" id="meter" aria-hidden="true"></div>
+        <p class="bmsg" id="bmsg" aria-live="polite"></p>
+      </div>
+      <div class="box">
+        <svg id="preview" viewBox="0 0 200 190" role="img" aria-label="Dein Roboter von oben"></svg>
+        <p class="sit" id="sit"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="h-s2">
+    <p class="no">Schritt 2</p>
+    <h2 id="h-s2">Aufgabe wählen</h2>
+    <div class="missions" id="missions"></div>
+    <p class="need" id="need"></p>
+  </section>
+
+  <section class="step" aria-labelledby="h-s3">
+    <p class="no">Schritt 3</p>
+    <h2 id="h-s3">Ausprobieren</h2>
+    <div class="play">
+      <div class="box">
+        <canvas id="arena" role="img" aria-label="Arena mit deinem Roboter"></canvas>
+        <p class="status" id="status" aria-live="polite"></p>
+      </div>
+      <div class="box">
+        <div class="tabs" role="group" aria-label="Wie soll der Roboter entscheiden?">
+          <button type="button" id="tHand" aria-pressed="true">Selbst programmieren</button>
+          <button type="button" id="tLearn" aria-pressed="false">Lernen lassen</button>
+        </div>
+
+        <div id="hand">
+          <p class="small">Lege für jede Situation fest, was der Roboter tun soll. Dann starte einen Versuch. Klappt es nicht, ändere eine Regel und versuche es noch einmal.</p>
+          <div class="btns"><button class="main" id="bHand" type="button">Versuch starten</button><button id="bHandReset" type="button">Alle auf „Gerade“</button></div>
+        </div>
+
+        <div id="learn" hidden>
+          <p class="small">Der Roboter probiert selbst. Für jede Situation merkt er sich in einer Tabelle, wie viele Punkte jede Aktion gebracht hat. Grün ist die bisher beste Aktion.</p>
+          <div class="stats">
+            <div class="stat"><span>Episoden</span><b id="sEp">0</b></div>
+            <div class="stat"><span>Letzte Punkte</span><b id="sLast">-</b></div>
+            <div class="stat"><span>Beste Punkte</span><b id="sBest">-</b></div>
+          </div>
+          <svg id="curve" viewBox="0 0 336 112" role="img" aria-label="Punkte pro Episode"></svg>
+          <div class="btns">
+            <button class="main" id="b50" type="button">50 Episoden lernen</button>
+            <button id="b1" type="button">1 Episode</button>
+            <button id="bTest" type="button">Ohne Zufall testen</button>
+            <button id="bClear" type="button">Gelerntes löschen</button>
+          </div>
+          <div class="sl"><label for="eps">Zufall</label><output id="epsv" for="eps">20 %</output>
+            <input type="range" id="eps" min="0" max="60" step="5" value="20">
+            <small>Wie oft der Roboter etwas Neues ausprobiert, statt die bisher beste Aktion zu nehmen.</small></div>
+          <div class="btns" style="grid-template-columns:minmax(0,1fr)"><button id="bCopy" type="button">Gelerntes als meine Regeln übernehmen</button></div>
+        </div>
+
+        <div class="cmp">
+          <div class="stat"><span>Deine Regeln</span><b id="cHand">-</b></div>
+          <div class="stat"><span>Gelernt, ohne Zufall</span><b id="cLearn">-</b></div>
+        </div>
+        <h3 id="rhead">Deine Regeln</h3>
+        <ul class="rules" id="rules"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="h-s4">
+    <p class="no">Aufgaben</p>
+    <h2 id="h-s4">Forscherfragen</h2>
+    <ul class="tasks" id="tasks"></ul>
+  </section>
+
+  <section class="step box" aria-labelledby="h-s5">
+    <h3 id="h-s5">Die Begriffe</h3>
+    <dl class="terms">
+      <div><dt>Situation</dt><dd>Was die Sensoren gerade melden. Zwei Sensoren mit je zwei Werten ergeben vier Situationen. Mehr Sensoren heißt: mehr Situationen, die gelernt werden müssen.</dd></div>
+      <div><dt>Regel</dt><dd>„Wenn diese Situation, dann diese Aktion.“ Beim Selbst-Programmieren schreibst du die Regeln. Beim Lernen findet der Roboter sie.</dd></div>
+      <div><dt>Belohnung</dt><dd>Punkte für jeden Schritt. Auf der Linie vorwärts: Plus. Anstoßen: Minus. Der Roboter will möglichst viele Punkte sammeln.</dd></div>
+      <div><dt>Q-Tabelle</dt><dd>Das Gedächtnis beim Lernen. Für jede Situation und jede Aktion steht dort, wie viele Punkte sie auf Dauer bringt.</dd></div>
+    </dl>
+  </section>
+
+  <p class="foot">Die Arena ist eine vereinfachte Simulation mit leichtem Rauschen in den Motoren, damit kein Versuch genau wie der andere ist. Fortschritt bei den Aufgaben wird nur in diesem Browser gemerkt. Das Gitter-Beispiel gibt es im <a href="#" onclick="parent.postMessage({go:'lern'},'*');return false">Bot-Labor</a>.</p>
+</main>
+
+<script>
+var $=function(i){return document.getElementById(i);};
+function f1(v){return v.toFixed(1).replace('.',',');}
+function store(k,v){try{localStorage.setItem('rb_'+k,JSON.stringify(v));}catch(e){}}
+function load(k,d){try{var v=localStorage.getItem('rb_'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}}
+
+/* ---------- Bauteile ---------- */
+var BUDGET=9;
+var MOTORS=[
+  {id:'mStd',name:'Standardmotoren',cost:2,desc:'Langsam und genau. Fährt enge Kurven.',V:1.6,T:0.11,N:0.02},
+  {id:'mTurbo',name:'Turbomotoren',cost:4,desc:'Doppelt so schnell, aber ungenauer und mit weiteren Kurven.',V:2.8,T:0.1,N:0.045}
+];
+var SENSORS=[
+  {id:'sLine',name:'Liniensensor',cost:3,desc:'Zwei Infrarot-Augen unten. Sehen eine dunkle Linie links oder rechts und merken sich, wo sie zuletzt war.',short:'Linie',
+   vals:['keine, zuletzt links','keine, zuletzt rechts','links','rechts','beide']},
+  {id:'sLight',name:'Lichtsensoren',cost:3,desc:'Zwei Augen vorne schräg. Merken, auf welcher Seite es heller ist.',short:'Licht',
+   vals:['links heller','vorne','rechts heller','dunkel']},
+  {id:'sDist',name:'Abstandssensor',cost:3,desc:'Ultraschall nach vorn. Meldet frei, mittel oder nah.',short:'Abstand',
+   vals:['frei','mittel','nah']},
+  {id:'sBump',name:'Stoßsensor',cost:1,desc:'Ein Taster vorn. Meldet, wenn der Roboter anstößt.',short:'Stoß',
+   vals:['nein','ja']}
+];
+var ACTS=[{n:'Links',s:'↰'},{n:'Gerade',s:'↑'},{n:'Rechts',s:'↱'}];
+var build={motor:'mStd',sensors:{sLine:true}};
+
+function motor(){return MOTORS.filter(function(m){return m.id===build.motor;})[0];}
+function active(){return SENSORS.filter(function(s){return build.sensors[s.id];});}
+function spent(){var c=motor().cost;active().forEach(function(s){c+=s.cost;});return c;}
+function nStates(){var n=1;active().forEach(function(s){n*=s.vals.length;});return n;}
+
+function partBtn(p,pressed,group){
+  return '<button type="button" class="part" data-g="'+group+'" data-id="'+p.id+'" aria-pressed="'+pressed+'"><span class="nm">'+p.name+'<span class="bp">'+p.cost+' BP</span></span><span class="ds">'+p.desc+'</span></button>';
+}
+function renderParts(){
+  $('pMotor').innerHTML=MOTORS.map(function(m){return partBtn(m,build.motor===m.id,'m');}).join('');
+  $('pSensor').innerHTML=SENSORS.map(function(s){return partBtn(s,!!build.sensors[s.id],'s');}).join('');
+  var used=spent(),h='';
+  for(var i=0;i<BUDGET;i++)h+='<i class="'+(i<used?'on':'')+'"></i>';
+  $('meter').innerHTML=h;
+  renderPreview();
+}
+function bmsg(t,err){var e=$('bmsg');e.textContent=t;e.className='bmsg'+(err?' err':'');}
+function onPart(ev){
+  var b=ev.target.closest('button.part');if(!b||busy)return;
+  var id=b.getAttribute('data-id'),g=b.getAttribute('data-g');
+  if(g==='m'){
+    if(build.motor===id)return;
+    var old=build.motor;build.motor=id;
+    if(spent()>BUDGET){build.motor=old;bmsg('Zu teuer. Nimm erst einen Sensor heraus, dann passen die '+MOTORS.filter(function(m){return m.id===id;})[0].name+'.',true);return;}
+  }else{
+    if(build.sensors[id]){delete build.sensors[id];}
+    else{
+      build.sensors[id]=true;
+      if(spent()>BUDGET){delete build.sensors[id];bmsg('Zu teuer. Du hast nur noch '+(BUDGET-spent())+' Baupunkte frei.',true);return;}
+    }
+  }
+  bmsg((BUDGET-spent())+' Baupunkte frei.',false);
+  rebuilt();
+}
+$('pMotor').addEventListener('click',onPart);
+$('pSensor').addEventListener('click',onPart);
+
+function renderPreview(){
+  var h='',s=build.sensors,turbo=build.motor==='mTurbo';
+  h+='<rect x="38" y="78" width="16" height="50" rx="4" style="fill:var(--ink-2)"/><rect x="146" y="78" width="16" height="50" rx="4" style="fill:var(--ink-2)"/>';
+  if(turbo){h+='<path d="M42 88h8M42 98h8M42 108h8M42 118h8M150 88h8M150 98h8M150 108h8M150 118h8" style="stroke:var(--accent);stroke-width:2"/>';}
+  h+='<rect x="56" y="52" width="88" height="110" rx="16" style="fill:var(--surface-2);stroke:var(--ink-2);stroke-width:2"/>';
+  h+='<rect x="78" y="104" width="44" height="30" rx="4" style="fill:var(--surface);stroke:var(--line);stroke-width:1.5"/>';
+  h+='<text x="100" y="123" text-anchor="middle" style="font-family:var(--f-mono);font-size:10px;fill:var(--ink-2)">Steuerung</text>';
+  h+='<text x="100" y="150" text-anchor="middle" style="font-family:var(--f-mono);font-size:10px;fill:'+(turbo?'var(--accent)':'var(--ink-2)')+'">'+(turbo?'Turbo':'Standard')+'</text>';
+  if(s.sLine){h+='<rect x="84" y="64" width="10" height="10" rx="2" style="fill:var(--track)"/><rect x="106" y="64" width="10" height="10" rx="2" style="fill:var(--track)"/><text x="100" y="90" text-anchor="middle" style="font-family:var(--f-mono);font-size:9px;fill:var(--ink-2)">Linie</text>';}
+  if(s.sLight){h+='<circle cx="62" cy="56" r="7" style="fill:var(--lamp);stroke:var(--ink-2);stroke-width:1"/><circle cx="138" cy="56" r="7" style="fill:var(--lamp);stroke:var(--ink-2);stroke-width:1"/>';}
+  if(s.sDist){h+='<rect x="80" y="36" width="40" height="16" rx="4" style="fill:var(--surface);stroke:var(--ink-2);stroke-width:1.5"/><circle cx="91" cy="44" r="5" style="fill:none;stroke:var(--path);stroke-width:2"/><circle cx="109" cy="44" r="5" style="fill:none;stroke:var(--path);stroke-width:2"/>';}
+  if(s.sBump){h+='<path d="M58 30 Q100 18 142 30" fill="none" stroke-linecap="round" style="stroke:var(--accent);stroke-width:5"/>';}
+  h+='<text x="100" y="184" text-anchor="middle" style="font-family:var(--f-mono);font-size:10px;fill:var(--ink-2)">vorne ist oben</text>';
+  $('preview').innerHTML=h;
+  var act=active(),n=nStates();
+  $('sit').textContent=act.length?('Sensoren: '+act.map(function(x){return x.short+' ('+x.vals.length+')';}).join(' × ')+' = '+n+' Situation'+(n>1?'en':'')+'.'):'Keine Sensoren: Der Roboter ist blind und kennt nur 1 Situation.';
+}
+
+/* ---------- Aufgaben ---------- */
+var MIS=[
+  {name:'Linie folgen',desc:'Eine ganze Runde auf der dunklen Linie fahren.',need:['sLine'],needTxt:'einen Liniensensor'},
+  {name:'Licht finden',desc:'Zur Lampe fahren. Sie steht jedes Mal woanders.',need:['sLight'],needTxt:'Lichtsensoren'},
+  {name:'Hindernissen ausweichen',desc:'500 Schritte herumfahren, ohne anzustoßen.',need:['sDist','sBump'],needTxt:'einen Abstands- oder Stoßsensor'}
+];
+var mission=0;
+function renderMissions(){
+  $('missions').innerHTML=MIS.map(function(m,i){return '<button type="button" class="mis" data-i="'+i+'" aria-pressed="'+(i===mission)+'"><b>'+m.name+'</b><span>'+m.desc+'</span></button>';}).join('');
+  var m=MIS[mission],ok=m.need.some(function(id){return build.sensors[id];});
+  var e=$('need');e.className='need'+(ok?'':' miss');
+  e.textContent=ok?'Dein Roboter hat, was er für „'+m.name+'“ braucht.':'Für „'+m.name+'“ fehlt deinem Roboter '+m.needTxt+'. Probiere trotzdem aus, was passiert, oder baue um.';
+}
+$('missions').addEventListener('click',function(ev){
+  var b=ev.target.closest('button.mis');if(!b||busy)return;
+  var i=+b.getAttribute('data-i');if(i===mission)return;
+  mission=i;resetLearning();renderMissions();preview();say('Neue Aufgabe: '+MIS[i].name+'. Starte einen Versuch.');
+});
+
+/* ---------- Simulation ---------- */
+var W=300,R=9,MAXS=500,TURNSP=0.35,CX=150,CY=150,EA=110,EB=75;
+var OBST=[[55,55,55,30],[195,45,40,65],[60,185,30,75],[175,195,80,35]];
+function rnd(a,b){return a+Math.random()*(b-a);}
+function wrap(a){while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a;}
+function hit(x,y,r){
+  if(x<r||y<r||x>W-r||y>W-r)return true;
+  if(mission===2)for(var i=0;i<OBST.length;i++){var o=OBST[i];if(x>o[0]-r&&x<o[0]+o[2]+r&&y>o[1]-r&&y<o[1]+o[3]+r)return true;}
+  return false;
+}
+function lineDist(x,y){
+  var dx=x-CX,dy=y-CY,dc=Math.sqrt(dx*dx+dy*dy),r=Math.sqrt(dx*dx/(EA*EA)+dy*dy/(EB*EB));
+  if(r<1e-6)return EB;return Math.abs(dc-dc/r);
+}
+function phiOf(x,y){return Math.atan2((y-CY)/EB,(x-CX)/EA);}
+function at(e,f,l){return [e.x+Math.cos(e.h)*f+Math.sin(e.h)*l,e.y+Math.sin(e.h)*f-Math.cos(e.h)*l];}
+function newEnv(){
+  var e={x:0,y:0,h:0,steps:0,bumped:false,hits:0,done:false,reason:'',prog:0};
+  if(mission===0){
+    var p=rnd(-Math.PI,Math.PI);e.x=CX+EA*Math.cos(p);e.y=CY+EB*Math.sin(p);
+    e.h=Math.atan2(EB*Math.cos(p),-EA*Math.sin(p))+rnd(-0.25,0.25);e.phi=phiOf(e.x,e.y);
+  }else if(mission===1){
+    e.lamp=[rnd(40,260),rnd(40,260)];
+    do{e.x=rnd(25,275);e.y=rnd(25,275);}while(Math.hypot(e.x-e.lamp[0],e.y-e.lamp[1])<130);
+    e.h=rnd(-Math.PI,Math.PI);e.prevD=Math.hypot(e.x-e.lamp[0],e.y-e.lamp[1]);
+  }else{
+    do{e.x=rnd(20,280);e.y=rnd(20,280);}while(hit(e.x,e.y,R+8));
+    e.h=rnd(-Math.PI,Math.PI);
+  }
+  return e;
+}
+var READ={
+  sLine:function(e){
+    if(mission!==0)return 0;
+    var L=at(e,10,5),Rr=at(e,10,-5),l=lineDist(L[0],L[1])<6,r=lineDist(Rr[0],Rr[1])<6;
+    if(l&&!r)e.lastSide=0;else if(r&&!l)e.lastSide=1;
+    return l&&r?4:l?2:r?3:(e.lastSide||0);
+  },
+  sLight:function(e){
+    if(mission!==1)return 3;
+    var dx=e.lamp[0]-e.x,dy=e.lamp[1]-e.y,d=Math.hypot(dx,dy),th=Math.atan2(dy,dx),k=100/(100+d);
+    var L=Math.max(0,Math.cos(wrap(th-(e.h-0.6))))*k,Rr=Math.max(0,Math.cos(wrap(th-(e.h+0.6))))*k;
+    if(L+Rr<0.12)return 3;
+    var q=(L-Rr)/(L+Rr);return q>0.12?0:q<-0.12?2:1;
+  },
+  sDist:function(e){
+    var best=99;
+    [-0.9,-0.45,0,0.45,0.9].forEach(function(o){
+      var ca=Math.cos(e.h+o),sa=Math.sin(e.h+o);
+      for(var d=0;d<=60&&d<best;d+=3){if(hit(e.x+ca*(R+d),e.y+sa*(R+d),0)){best=d;break;}}
+    });
+    return best<16?2:best<40?1:0;
+  },
+  sBump:function(e){return e.bumped?1:0;}
+};
+function sense(e){var idx=0,m=1;active().forEach(function(s){idx+=READ[s.id](e)*m;m*=s.vals.length;});return idx;}
+function stateLabel(i){
+  var act=active();if(!act.length)return [['Immer','']];
+  return act.map(function(s){var v=i%s.vals.length;i=Math.floor(i/s.vals.length);return [s.short,s.vals[v]];});
+}
+function stepEnv(e,a){
+  var M=motor(),sp=a===1?M.V:M.V*TURNSP;
+  e.h=wrap(e.h+(a-1)*M.T+rnd(-M.N,M.N));
+  var nx=e.x+Math.cos(e.h)*sp,ny=e.y+Math.sin(e.h)*sp,r=0;
+  if(hit(nx,ny,R)){if(!e.bumped)e.hits++;e.bumped=true;var bx=e.x-Math.cos(e.h)*2,by=e.y-Math.sin(e.h)*2;if(!hit(bx,by,R)){e.x=bx;e.y=by;}}else{e.bumped=false;e.x=nx;e.y=ny;}
+  e.steps++;
+  if(mission===0){
+    var p=at(e,10,0),d=lineDist(p[0],p[1]),ph=phiOf(e.x,e.y),dp=wrap(ph-e.phi);e.phi=ph;
+    if(d<7)e.prog+=dp;
+    if(e.bumped)r=-2;
+    else if(d<7)r=Math.max(-2,Math.min(2,dp*60));
+    else if(d<22)r=0;
+    else{r=-20;e.done=true;e.reason='lost';}
+    if(!e.done&&e.prog>=2*Math.PI){r+=10;e.done=true;e.reason='lap';}
+  }else if(mission===1){
+    var dl=Math.hypot(e.x-e.lamp[0],e.y-e.lamp[1]);r=(e.prevD-dl)*0.5-0.1;e.prevD=dl;
+    if(e.bumped)r-=2;
+    if(dl<16){r+=30;e.done=true;e.reason='lamp';}
+  }else{
+    r=e.bumped?-8:(a===1?1:0.4);
+  }
+  if(!e.done&&e.steps>=(mission===0?900:MAXS)){e.done=true;e.reason='time';}
+  return r;
+}
+
+/* ---------- Gedächtnis und Regeln ---------- */
+var ALPHA=0.2,GAMMA=0.85,eps=0.2;
+var Q=[],rules=[],hist=[],nEp=0,bestScore=null,handScore=null,learnScore=null;
+function resetLearning(){
+  Q=[];for(var i=0;i<nStates();i++)Q.push([0,0,0]);
+  hist=[];nEp=0;bestScore=null;learnScore=null;handScore=null;renderStats();renderCurve();renderRules();
+}
+function resetRules(){rules=[];for(var i=0;i<nStates();i++)rules.push(1);}
+function bestA(i){var q=Q[i],m=Math.max(q[0],q[1],q[2]),c=[];for(var a=0;a<3;a++)if(q[a]===m)c.push(a);return c[Math.floor(Math.random()*c.length)];}
+function seen(i){var q=Q[i];return q[0]!==0||q[1]!==0||q[2]!==0;}
+function episode(kind,learn,ep){
+  var e=newEnv(),path=[[e.x,e.y,e.h]],s=sense(e),tot=0,lamp=e.lamp;
+  while(!e.done){
+    var a=kind==='hand'?rules[s]:(Math.random()<ep?Math.floor(Math.random()*3):bestA(s));
+    var r=stepEnv(e,a),s2=sense(e);
+    if(learn){var q=Q[s],m2=Math.max(Q[s2][0],Q[s2][1],Q[s2][2]);q[a]+=ALPHA*(r+(e.done?0:GAMMA*m2)-q[a]);}
+    tot+=r;s=s2;path.push([e.x,e.y,e.h]);
+  }
+  return {path:path,score:Math.round(tot),e:e,lamp:lamp};
+}
+function resultText(res){
+  var e=res.e;
+  if(mission===0){
+    var pc=Math.max(0,Math.min(100,Math.round(e.prog/(2*Math.PI)*100)));
+    return e.reason==='lap'?'Runde geschafft in '+e.steps+' Schritten.':e.reason==='lost'?'Linie verloren nach '+e.steps+' Schritten. Runde zu '+pc+' % gefahren.':'Zeit um. Runde zu '+pc+' % gefahren.';
+  }
+  if(mission===1)return e.reason==='lamp'?'Licht erreicht nach '+e.steps+' Schritten.':'Zeit um, das Licht nicht erreicht.'+(e.hits?' '+e.hits+'-mal angestoßen.':'');
+  return e.hits===0?'500 Schritte ohne Zusammenstoß.':e.hits+(e.hits===1?' Zusammenstoß':' Zusammenstöße')+' in 500 Schritten.';
+}
+
+/* ---------- Zeichnen ---------- */
+var cv=$('arena'),ctx=cv.getContext('2d'),view=null;
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function fit(){
+  var w=cv.clientWidth||300,d=window.devicePixelRatio||1;
+  cv.width=Math.round(w*d);cv.height=Math.round(w*d);
+  ctx.setTransform(cv.width/W,0,0,cv.height/W,0,0);
+  draw();
+}
+function draw(){
+  if(!view)return;
+  var c={bg:css('--surface-2'),grid:css('--line'),track:css('--track'),wall:css('--wall'),lamp:css('--lamp'),path:css('--path'),acc:css('--accent'),onacc:css('--on-accent'),ink:css('--ink-2'),bad:css('--bad')};
+  ctx.fillStyle=c.bg;ctx.fillRect(0,0,W,W);
+  ctx.strokeStyle=c.grid;ctx.lineWidth=0.5;ctx.globalAlpha=.6;
+  for(var g=25;g<W;g+=25){ctx.beginPath();ctx.moveTo(g,0);ctx.lineTo(g,W);ctx.moveTo(0,g);ctx.lineTo(W,g);ctx.stroke();}
+  ctx.globalAlpha=1;
+  if(mission===0){ctx.strokeStyle=c.track;ctx.lineWidth=12;ctx.beginPath();ctx.ellipse(CX,CY,EA,EB,0,0,2*Math.PI);ctx.stroke();}
+  if(mission===1&&view.lamp){
+    var L=view.lamp,gr=ctx.createRadialGradient(L[0],L[1],2,L[0],L[1],90);
+    gr.addColorStop(0,c.lamp);gr.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.globalAlpha=.45;ctx.fillStyle=gr;ctx.beginPath();ctx.arc(L[0],L[1],90,0,2*Math.PI);ctx.fill();ctx.globalAlpha=1;
+    ctx.fillStyle=c.lamp;ctx.beginPath();ctx.arc(L[0],L[1],9,0,2*Math.PI);ctx.fill();
+    ctx.strokeStyle=c.ink;ctx.lineWidth=1;ctx.stroke();
+  }
+  if(mission===2){ctx.fillStyle=c.wall;OBST.forEach(function(o){ctx.beginPath();ctx.roundRect?ctx.roundRect(o[0],o[1],o[2],o[3],4):ctx.rect(o[0],o[1],o[2],o[3]);ctx.fill();});}
+  ctx.strokeStyle=c.wall;ctx.lineWidth=3;ctx.strokeRect(1.5,1.5,W-3,W-3);
+  var p=view.path,n=Math.min(view.i,p.length-1);
+  if(n>0){
+    ctx.strokeStyle=c.path;ctx.lineWidth=2;ctx.globalAlpha=.75;ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(p[0][0],p[0][1]);
+    for(var k=1;k<=n;k++)ctx.lineTo(p[k][0],p[k][1]);ctx.stroke();ctx.globalAlpha=1;
+  }
+  var q=p[n],x=q[0],y=q[1],h=q[2],s=build.sensors;
+  ctx.save();ctx.translate(x,y);ctx.rotate(h);
+  ctx.fillStyle=c.ink;ctx.fillRect(-6,-R-2,12,3);ctx.fillRect(-6,R-1,12,3);
+  ctx.fillStyle=view.bump?c.bad:c.acc;ctx.beginPath();ctx.arc(0,0,R,0,2*Math.PI);ctx.fill();
+  ctx.strokeStyle=c.onacc;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(R-1,0);ctx.stroke();
+  if(s.sDist){ctx.strokeStyle=c.path;ctx.globalAlpha=.35;ctx.lineWidth=1;ctx.beginPath();[-0.45,0,0.45].forEach(function(o){ctx.moveTo(Math.cos(o)*R,Math.sin(o)*R);ctx.lineTo(Math.cos(o)*(R+60),Math.sin(o)*(R+60));});ctx.stroke();ctx.globalAlpha=1;}
+  if(s.sLight){ctx.fillStyle=c.lamp;[-0.6,0.6].forEach(function(a){ctx.beginPath();ctx.arc(Math.cos(a)*R,Math.sin(a)*R,2.2,0,2*Math.PI);ctx.fill();});}
+  if(s.sLine){ctx.fillStyle=c.track;ctx.strokeStyle=c.onacc;ctx.lineWidth=.6;[-5,5].forEach(function(l){ctx.beginPath();ctx.arc(10,l,1.8,0,2*Math.PI);ctx.fill();ctx.stroke();});}
+  ctx.restore();
+}
+function preview(){var e=newEnv();view={path:[[e.x,e.y,e.h]],i:0,lamp:e.lamp};draw();}
+window.addEventListener('resize',fit);
+try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);}catch(err){}
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+var busy=false;
+function setBusy(b){busy=b;['bHand','bHandReset','b50','b1','bTest','bClear','bCopy'].forEach(function(id){$(id).disabled=b;});}
+function play(res,after){
+  setBusy(true);view={path:res.path,i:0,lamp:res.lamp};
+  var per=Math.max(3,Math.round(res.path.length/140));
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function fr(){
+    view.i+=reduce?res.path.length:per;
+    if(view.i>=res.path.length-1){view.i=res.path.length-1;view.bump=res.e.bumped;draw();setBusy(false);after();return;}
+    draw();requestAnimationFrame(fr);
+  }
+  requestAnimationFrame(fr);
+}
+function say(t){$('status').textContent=t;}
+
+/* ---------- Anzeigen ---------- */
+var mode='hand';
+function renderRules(){
+  var h='',n=nStates();
+  for(var i=0;i<n;i++){
+    var lab=stateLabel(i).map(function(p){return p[1]?'<b>'+p[0]+'</b>'+p[1]:p[0];}).join(' · ');
+    h+='<li><span class="when">'+lab+'</span><span class="acts">';
+    for(var a=0;a<3;a++){
+      if(mode==='hand'){
+        h+='<button type="button" data-s="'+i+'" data-a="'+a+'" aria-pressed="'+(rules[i]===a)+'" aria-label="Wenn '+stateLabel(i).map(function(p){return p.join(' ');}).join(', ')+': '+ACTS[a].n+'">'+ACTS[a].s+' '+ACTS[a].n+'</button>';
+      }else{
+        var q=Q[i],m=Math.max(q[0],q[1],q[2]),best=seen(i)&&q[a]===m;
+        h+='<button type="button" class="ro'+(best?' best':'')+'" tabindex="-1" aria-disabled="true">'+ACTS[a].s+' '+ACTS[a].n+'<small>'+(seen(i)?f1(q[a]):'–')+'</small></button>';
+      }
+    }
+    h+='</span></li>';
+  }
+  $('rules').innerHTML=h;
+  $('rhead').textContent=mode==='hand'?'Deine Regeln':'Q-Tabelle: was der Roboter gelernt hat';
+}
+$('rules').addEventListener('click',function(ev){
+  if(mode!=='hand'||busy)return;
+  var b=ev.target.closest('button[data-s]');if(!b)return;
+  rules[+b.getAttribute('data-s')]=+b.getAttribute('data-a');renderRules();
+});
+function renderStats(){
+  $('sEp').textContent=String(nEp);
+  $('sLast').textContent=hist.length?String(hist[hist.length-1]):'-';
+  $('sBest').textContent=bestScore===null?'-':String(bestScore);
+  $('cHand').textContent=handScore===null?'-':handScore+' P';
+  $('cLearn').textContent=learnScore===null?'-':learnScore+' P';
+}
+function renderCurve(){
+  var Wc=336,H=112,L=38,Rm=8,T=8,B=18,h='';
+  if(!hist.length){
+    h+='<text x="'+(Wc/2)+'" y="'+(H/2+4)+'" text-anchor="middle" style="font-family:var(--f-body);font-size:13px;fill:var(--ink-2)">Noch keine Episode gelernt</text>';
+  }else{
+    var lo=Math.min.apply(null,hist),hi=Math.max.apply(null,hist);if(hi===lo){hi+=1;lo-=1;}
+    var yy=function(v){return T+(H-T-B)*(1-(v-lo)/(hi-lo));},n=hist.length,xs=function(i){return L+(n<2?0:(Wc-L-Rm)*i/(n-1));};
+    [lo,hi].forEach(function(v){
+      h+='<line x1="'+L+'" x2="'+(Wc-Rm)+'" y1="'+yy(v)+'" y2="'+yy(v)+'" style="stroke:var(--line);stroke-width:1"/>';
+      h+='<text x="'+(L-6)+'" y="'+(yy(v)+4)+'" text-anchor="end" style="font-family:var(--f-mono);font-size:11px;fill:var(--ink-2)">'+v+'</text>';
+    });
+    if(lo<0&&hi>0)h+='<line x1="'+L+'" x2="'+(Wc-Rm)+'" y1="'+yy(0)+'" y2="'+yy(0)+'" style="stroke:var(--ink-2);stroke-width:1;stroke-dasharray:3 3"/>';
+    h+='<polyline points="'+hist.map(function(v,i){return xs(i)+','+yy(v);}).join(' ')+'" fill="none" stroke-linejoin="round" style="stroke:var(--path);stroke-width:2"/>';
+    h+='<circle cx="'+xs(n-1)+'" cy="'+yy(hist[n-1])+'" r="3.5" style="fill:var(--accent)"/>';
+    h+='<text x="'+L+'" y="'+(H-3)+'" style="font-family:var(--f-mono);font-size:11px;fill:var(--ink-2)">Episode 1</text>';
+    h+='<text x="'+(Wc-Rm)+'" y="'+(H-3)+'" text-anchor="end" style="font-family:var(--f-mono);font-size:11px;fill:var(--ink-2)">Episode '+n+'</text>';
+  }
+  $('curve').innerHTML=h;
+}
+function setMode(m){
+  if(busy)return;mode=m;
+  $('tHand').setAttribute('aria-pressed',m==='hand');$('tLearn').setAttribute('aria-pressed',m==='learn');
+  $('hand').hidden=m!=='hand';$('learn').hidden=m!=='learn';renderRules();
+}
+$('tHand').onclick=function(){setMode('hand');};
+$('tLearn').onclick=function(){setMode('learn');};
+
+/* ---------- Knöpfe ---------- */
+function learnOne(){var r=episode('q',true,eps);nEp++;hist.push(r.score);if(bestScore===null||r.score>bestScore)bestScore=r.score;return r;}
+$('bHand').onclick=function(){
+  var r=episode('hand',false,0);
+  play(r,function(){handScore=r.score;renderStats();say('Deine Regeln: '+resultText(r)+' '+r.score+' Punkte.');tick('hand');});
+};
+$('bHandReset').onclick=function(){resetRules();renderRules();say('Alle Regeln stehen wieder auf „Gerade“.');};
+$('b1').onclick=function(){
+  var r=learnOne();
+  play(r,function(){renderStats();renderCurve();renderRules();say('Episode '+nEp+' mit Zufall: '+resultText(r)+' '+r.score+' Punkte.');});
+};
+$('b50').onclick=function(){
+  for(var i=0;i<50;i++)learnOne();
+  var t=episode('q',false,0);
+  play(t,function(){learnScore=t.score;renderStats();renderCurve();renderRules();say(nEp+' Episoden gelernt. Test ohne Zufall: '+resultText(t)+' '+t.score+' Punkte.');tick('learn');});
+};
+$('bTest').onclick=function(){
+  var t=episode('q',false,0);
+  play(t,function(){learnScore=t.score;renderStats();say('Test ohne Zufall: '+resultText(t)+' '+t.score+' Punkte.'+(nEp===0?' Der Roboter hat noch nichts gelernt.':''));});
+};
+$('bClear').onclick=function(){var keep=handScore;resetLearning();handScore=keep;renderStats();say('Gedächtnis gelöscht. Der Roboter weiß wieder nichts.');};
+$('bCopy').onclick=function(){
+  if(nEp===0){say('Lass den Roboter zuerst lernen.');return;}
+  for(var i=0;i<nStates();i++){var q=Q[i];rules[i]=seen(i)?q.indexOf(Math.max(q[0],q[1],q[2])):rules[i];}
+  setMode('hand');say('Die gelernten Aktionen stehen jetzt in deinen Regeln. Starte einen Versuch oder verbessere sie von Hand.');
+};
+$('eps').oninput=function(){eps=this.value/100;$('epsv').textContent=this.value+' %';};
+
+function rebuilt(){resetRules();resetLearning();renderParts();renderMissions();preview();say('Roboter umgebaut. Er kennt jetzt '+nStates()+' Situation'+(nStates()>1?'en':'')+'.');tick('build');}
+
+/* ---------- Forscherfragen ---------- */
+var TASKS=[
+  {id:'t1',t:'Baue einen Linienfolger mit Standardmotoren und Liniensensor. Stelle die Regeln so ein, dass er eine ganze Runde schafft.',h:'Tipp: Sieht nur das linke Auge die Linie, liegt sie links vom Roboter. Wohin muss er dann lenken?'},
+  {id:'t2',t:'Lass denselben Roboter 50 Episoden lernen. Ist er besser oder schlechter als deine Regeln?',h:'Vergleiche die beiden Punktzahlen über der Tabelle. Lerne ruhig noch einmal 50 Episoden.'},
+  {id:'t3',t:'Tausche auf Turbomotoren. Funktionieren deine Regeln noch?',h:'Schnelle Motoren fahren weitere Kurven und wackeln mehr. Was in der Simulation klappt, klappt auf einem anderen Roboter nicht automatisch.'},
+  {id:'t4',t:'Wähle „Licht finden“, aber baue keine Lichtsensoren ein. Was lernt der Roboter?',h:'Ohne passenden Sensor sehen alle Situationen gleich aus. Dann kann auch Lernen nicht helfen.'},
+  {id:'t5',t:'Hindernisse: Vergleiche einen Roboter nur mit Stoßsensor und einen mit Abstandssensor. Wer stößt seltener an?',h:'Der Stoßsensor merkt es erst, wenn es schon passiert ist. Der Abstandssensor warnt vorher.'}
+];
+var tdone=load('tasks',{});
+function renderTasks(){
+  $('tasks').innerHTML=TASKS.map(function(t){return '<li><label><input type="checkbox" id="'+t.id+'"'+(tdone[t.id]?' checked':'')+'><span>'+t.t+'<span class="hint">'+t.h+'</span></span></label></li>';}).join('');
+}
+$('tasks').addEventListener('change',function(ev){var el=ev.target;if(el.type!=='checkbox')return;tdone[el.id]=el.checked;store('tasks',tdone);});
+function tick(){}
+
+renderParts();resetRules();resetLearning();renderMissions();renderTasks();setMode('hand');
+view={path:[[0,0,0]],i:0};preview();fit();
+say('Dein Roboter steht auf der Linie. Lege die Regeln fest und drücke „Versuch starten“, oder wechsle zu „Lernen lassen“.');
+</script>
+
+</body></html>

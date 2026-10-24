@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Roboter-Werkstatt</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0e1625">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: Rahmen-App. Schmale Kopfleiste mit Navigation, darunter immer genau ein Bereich (Start oder einer der fünf Bereiche), die im Hintergrund weiterlaufen. Dunkles Werkstatt-Design wie die Nori-Werkstatt. */
+:root{
+  --bg:#0e1625;--panel:#162238;--panel2:#1e2d47;--ink:#edf2fb;--muted:#97a6c2;--line:#2b3b59;
+  --coral:#ff7a5c;--mint:#4fd1a1;--sensor:#5aa2ff;--amber:#ffc857;
+  --f-display:"Fredoka","Baloo 2",system-ui,sans-serif;--f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark}
+html,body{height:100%;margin:0}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;overflow:hidden}
+button{font:inherit;color:inherit}
+.shell{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.bar{display:flex;align-items:center;gap:8px;padding:6px max(8px,env(safe-area-inset-right,0px)) 6px max(8px,env(safe-area-inset-left,0px));padding-top:max(6px,env(safe-area-inset-top,0px));border-bottom:1px solid var(--line);background:var(--panel);min-width:0}
+.brand{border:0;background:none;padding:0;text-align:left;cursor:pointer;display:grid;line-height:1.05;margin-right:auto;min-width:0}
+.brand b{font:700 1.05rem var(--f-display);white-space:nowrap}.brand b span{color:var(--coral)}
+.brand small{color:var(--amber);font-size:.66rem;white-space:nowrap}
+.nav{max-width:100%;overflow-x:auto;scrollbar-width:none;display:flex;gap:3px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px}
+.nav button{flex:none;border:0;background:none;border-radius:999px;padding:5px 11px;font:600 .8rem var(--f-display);color:var(--muted);cursor:pointer;white-space:nowrap}
+.homebtn{display:none}
+.nav button[aria-selected="true"]{background:var(--coral);color:#1a0d08}
+.nav button:focus-visible,.brand:focus-visible,.card button:focus-visible{outline:2px solid var(--sensor);outline-offset:2px}
+.views{position:relative;min-height:0}
+.view{position:absolute;inset:0}
+iframe{width:100%;height:100%;border:0;display:block;background:var(--bg)}
+.home{overflow-y:auto;padding:16px max(14px,env(safe-area-inset-left,0px)) 24px}
+.hwrap{max-width:900px;margin:0 auto;display:grid;gap:14px}
+.home h1{font:700 clamp(1.7rem,6vw,2.5rem) var(--f-display);margin:0;line-height:1.1}
+.home h1 span{color:var(--coral)}
+.lede{margin:0;color:var(--muted);max-width:60ch}
+.cards{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media (min-width:760px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:6px;align-content:start;grid-template-rows:auto auto 1fr auto}
+.card .no{font:700 .72rem var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--amber)}
+.card h2{margin:0;font:700 1.25rem var(--f-display)}
+.card p{margin:0;color:var(--muted);font-size:.9rem}
+.card ul{margin:0;padding-left:1.1em;color:var(--muted);font-size:.85rem}
+.card .go{justify-self:start;border:0;border-radius:999px;background:var(--coral);color:#1a0d08;font:700 .9rem var(--f-display);padding:7px 16px;cursor:pointer;margin-top:4px}
+.card.done .go{background:var(--mint);color:#06281c}
+.card .tick{color:var(--mint);font-size:.8rem;font-weight:700;min-height:1.1em}
+.path{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font:600 .8rem var(--f-display);color:var(--muted)}
+.path i{width:22px;height:22px;border-radius:50%;background:var(--panel2);display:grid;place-items:center;font-style:normal;color:var(--ink)}
+.path i.on{background:var(--mint);color:#06281c}
+.foot{color:var(--muted);font-size:.78rem}
+@media (max-width:640px){.brand small{display:none}.nav button{padding:5px 8px;font-size:.76rem}}
+@media (max-width:520px){.homebtn{display:block}.brand{display:none}.nav{margin-inline:auto}}
+@media print{.bar{display:none}.shell{display:block;height:auto}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="bar">
+    <button type="button" class="brand" data-v="home" title="Startseite"><b>Roboter-<span>Werkstatt</span></b><small>von Dr. Piczlewicz</small></button>
+    <nav class="nav" role="tablist" aria-label="Bereiche">
+      <button type="button" class="homebtn" data-v="home" aria-label="Startseite" title="Startseite">⌂</button>
+      <button type="button" role="tab" data-v="nori" aria-selected="true">Nori</button>
+      <button type="button" role="tab" data-v="lern" aria-selected="false">Bot</button>
+      <button type="button" role="tab" data-v="bau" aria-selected="false">Baukasten</button>
+      <button type="button" role="tab" data-v="bal" aria-selected="false">Balance</button>
+      <button type="button" role="tab" data-v="teile" aria-selected="false">Bauteile</button>
+      <button type="button" role="tab" data-v="quiz" aria-selected="false">Quiz</button>
+    </nav>
+  </header>
+  <main class="views">
+    <section class="view home" id="v-home">
+      <div class="hwrap">
+        <div><h1>Roboter-<span>Werkstatt</span></h1></div>
+        <p class="lede">Sechs Bereiche rund um Roboter. Starte mit Nori, dem kleinen Zweibeiner: zusammenbauen, testen, lernen lassen und durch den Parcours schicken. Danach üben ein kleiner Bot und ein Stab das Lernen durch Belohnung, du baust einen Rad-Roboter, und zum Schluss siehst du in jedes Bauteil hinein. Am Ende wartet ein Quiz mit Testat.</p>
+        <div class="path" id="path" aria-hidden="true"></div>
+        <div class="cards">
+          <article class="card" data-c="nori">
+            <span class="no">1 · Das große Projekt</span>
+            <h2>Nori-Werkstatt</h2>
+            <p>Film, Zusammenbau in 3D mit 14 Teilen, Testen, das Gehirn, Lernen durch Belohnung, Nachmachen und ein Parcours mit Tanzen und Fußball.</p>
+            <div><span class="tick" data-t="nori"></span><br><button class="go" type="button" data-go="nori">Starten</button></div>
+          </article>
+          <article class="card" data-c="lern">
+            <span class="no">2 · Lernen durch Belohnung</span>
+            <h2>Bot-Labor</h2>
+            <p>Ein kleiner Bot sucht sein Ziel auf einer Karte. Er kennt den Weg nicht, probiert aus und merkt sich, was Punkte bringt.</p>
+            <div><span class="tick" data-t="lern"></span><br><button class="go" type="button" data-go="lern">Starten</button></div>
+          </article>
+          <article class="card" data-c="bau">
+            <span class="no">3 · Bauen und lernen</span>
+            <h2>Roboter-Baukasten</h2>
+            <p>Wähle Motoren und Sensoren für einen Rad-Roboter und löse Aufgaben wie Linie folgen, Licht finden und Ausweichen.</p>
+            <div><span class="tick" data-t="bau"></span><br><button class="go" type="button" data-go="bau">Starten</button></div>
+          </article>
+          <article class="card" data-c="bal">
+            <span class="no">4 · Nochmal Belohnung</span>
+            <h2>Stab-Balance</h2>
+            <p>Ein Wagen soll einen Stab aufrecht halten. Schau zu, wie er durch Fallen und Belohnung das Balancieren lernt.</p>
+            <div><span class="tick" data-t="bal"></span><br><button class="go" type="button" data-go="bal">Starten</button></div>
+          </article>
+          <article class="card" data-c="teile">
+            <span class="no">5 · Wie funktioniert das?</span>
+            <h2>Bauteile-Atlas</h2>
+            <p>Servo, Mikrocontroller, Hauptrechner und mehr: Klick die Einzelteile an und erfahre, wie sie aufgebaut sind und arbeiten.</p>
+            <div><span class="tick" data-t="teile"></span><br><button class="go" type="button" data-go="teile">Starten</button></div>
+          </article>
+          <article class="card" data-c="quiz">
+            <span class="no">6 · Zum Schluss</span>
+            <h2>Abschluss-Quiz</h2>
+            <p>10 Fragen zu Bauteilen, Robotern, Programmierung und Lernen. Ab 7 richtigen gibt es ein Testat zum Ausdrucken.</p>
+            <div><span class="tick" data-t="quiz"></span><br><button class="go" type="button" data-go="quiz">Starten</button></div>
+          </article>
+        </div>
+        <p class="foot">Alles läuft in deinem Browser. Der Fortschritt in den Werkstätten bleibt auf diesem Gerät gespeichert. Die Werkstätten laufen im Hintergrund weiter, wenn du zwischen ihnen wechselst. Entwickelt von Dr. Piczlewicz.</p>
+      </div>
+    </section>
+    <section class="view" id="v-lern" hidden></section>
+    <section class="view" id="v-bau" hidden></section>
+    <section class="view" id="v-nori" hidden></section>
+    <section class="view" id="v-bal" hidden></section>
+    <section class="view" id="v-teile" hidden></section>
+    <section class="view" id="v-quiz" hidden></section>
+  </main>
+</div>
+<script>
+(function(){
+'use strict';
+var SRC={nori:'nori.html',lern:'lernlabor.html',bau:'baukasten.html',bal:'balance.html',teile:'bauteile.html',quiz:'quiz.html'},TITLE={nori:'Nori-Werkstatt',lern:'Bot-Labor',bau:'Roboter-Baukasten',bal:'Stab-Balance',teile:'Bauteile-Atlas',quiz:'Abschluss-Quiz'},ORDER=['nori','lern','bau','bal','teile','quiz'],SHORT={nori:'Nori',lern:'Bot',bau:'Baukasten',bal:'Balance',teile:'Bauteile',quiz:'Quiz'};
+var loaded={},seen={};
+try{seen=JSON.parse(localStorage.getItem('rw.seen')||'{}')}catch(e){}
+function save(){try{localStorage.setItem('rw.seen',JSON.stringify(seen))}catch(e){}}
+function show(v){
+  if(v!=='home'&&!SRC[v])v='home';
+  document.querySelectorAll('.nav button').forEach(function(b){var on=b.dataset.v===v;b.setAttribute('aria-selected',on);if(on&&b.scrollIntoView)try{b.scrollIntoView({inline:'nearest',block:'nearest'})}catch(e){}});
+  ['home'].concat(ORDER).forEach(function(k){var el=document.getElementById('v-'+k);el.hidden=k!==v});
+  if(SRC[v]){
+    if(!loaded[v]){var f=document.createElement('iframe');f.src=SRC[v];f.title=TITLE[v];f.setAttribute('allow','autoplay; fullscreen');document.getElementById('v-'+v).appendChild(f);loaded[v]=f}
+    if(!seen[v]){seen[v]=1;save();marks()}
+  }
+  try{history.replaceState(null,'','#'+v)}catch(e){}
+  document.title='Roboter-Werkstatt'+(SRC[v]?' · '+TITLE[v]:'');
+}
+function marks(){
+  document.querySelectorAll('[data-t]').forEach(function(t){var k=t.dataset.t;t.textContent=seen[k]?'✓ schon besucht':'';t.closest('.card').classList.toggle('done',!!seen[k])});
+  document.querySelectorAll('[data-go]').forEach(function(b){b.textContent=seen[b.dataset.go]?'Weiter':'Starten'});
+  var p=document.getElementById('path');p.innerHTML=ORDER.map(function(k,i){return '<i class="'+(seen[k]?'on':'')+'">'+(i+1)+'</i> '+SHORT[k]}).join(' <span>›</span> ');
+}
+document.querySelector('.bar').addEventListener('click',function(e){var b=e.target.closest('[data-v]');if(b)show(b.dataset.v)});
+document.querySelector('.cards').addEventListener('click',function(e){var b=e.target.closest('[data-go]');if(b)show(b.dataset.go)});
+window.addEventListener('message',function(e){var d=e.data;if(d&&typeof d.go==='string'){if(d.go==='home'||SRC[d.go])show(d.go)}});
+marks();
+show((location.hash||'').replace('#','')||'nori');
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(function(){});
+window.__rw={show:show,loaded:loaded};
+})();
+</script>
+</body>
+</html>
